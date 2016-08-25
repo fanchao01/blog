@@ -1,0 +1,655 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="从object关键词说起
+官方文档上这样定义object:
+12Any data with state (attributes or value) and defined behavior (methods). Also the ultimate base class of any new-style class.
+具有状态（属性和值）以及定义了行为（方法）的数据就是object。同时object">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python中object/type/metaclass">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2014/10/11/python_metaclass超类/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="从object关键词说起
+官方文档上这样定义object:
+12Any data with state (attributes or value) and defined behavior (methods). Also the ultimate base class of any new-style class.
+具有状态（属性和值）以及定义了行为（方法）的数据就是object。同时object">
+<meta property="og:updated_time" content="2016-08-25T03:37:24.767Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python中object/type/metaclass">
+<meta name="twitter:description" content="从object关键词说起
+官方文档上这样定义object:
+12Any data with state (attributes or value) and defined behavior (methods). Also the ultimate base class of any new-style class.
+具有状态（属性和值）以及定义了行为（方法）的数据就是object。同时object">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2014/10/11/python_metaclass超类/"/>
+
+  <title> python中object/type/metaclass | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                python中object/type/metaclass
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-10-11T00:00:00-07:00" content="2014-10-11">
+              2014-10-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/10/11/python_metaclass超类/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/10/11/python_metaclass超类/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="从object关键词说起"><a href="#从object关键词说起" class="headerlink" title="从object关键词说起"></a>从<code>object</code>关键词说起</h2><hr>
+<p>官方文档上这样定义<code>object</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Any data <span class="keyword">with</span> state (attributes <span class="keyword">or</span> value) <span class="keyword">and</span> defined behavior (methods). </div><div class="line">Also the ultimate base <span class="class"><span class="keyword">class</span> <span class="title">of</span> <span class="title">any</span> <span class="title">new</span>-<span class="title">style</span> <span class="title">class</span>.</span></div></pre></td></tr></table></figure>
+<p>具有状态（属性和值）以及定义了行为（方法）的数据就是object。同时object是所有新式类的最根本的基类。利用<code>object</code>这样定义（新式）类：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'new self id:'</span>, id(self)</div><div class="line"></div><div class="line">id(MyClass):</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">48438744L</span></div><div class="line"></div><div class="line">id(object)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">506057936L</span></div><div class="line"></div><div class="line">type(MyClass)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>&lt;type <span class="string">'type'</span>&gt;</div><div class="line"></div><div class="line">isinstance(MyClass, type)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">True</span></div></pre></td></tr></table></figure>
+<p><code>MyClass</code>即为静态定义(运行前就定义好了）的类，它继承于<code>object</code>，也因此获得了<code>object</code>的一些属性和方法，包括魔术方法。python中的类的最大特色在于其也是一个对象(实例)。每个类存在于内存中，是<code>object</code>的子类，<code>type</code>的实例。</p>
+<p>实例通过<code>__init__</code>函数进行初始化，一般将此作用的方法称为构造函数。但是python中的<code>__init__</code>还不能完全称为构造函数。很明显，在<code>__init__</code>运行前，实例就存在了，即传入的<code>self</code>参数。实例这个对象在<code>__init__</code>运行前就被解释器按照<code>object</code>的内存模型分配好了内存，进行了一番装饰。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">i = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self id: <span class="number">42531472L</span></div><div class="line">id(i)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">42531472L</span></div><div class="line"></div><div class="line">ii = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self id: <span class="number">34971944</span></div><div class="line">id(ii)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">34971944L</span></div></pre></td></tr></table></figure>
+<p>通过上面这个例子看到<code>self</code>这个参数就是python解释器已经初步实例化了的实例，也可以看到在<code>__init__</code>函数被调用前就已经存在了。因此python有另外一个魔术方法<code>__new__</code>，可以真正的定制实例的内存模型（创建一个什么样的实例)。下面的例子更能说明这一点：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		instance = super(MyClass, cls).__new__(cls)</div><div class="line">		<span class="comment">#或者写成</span></div><div class="line">		<span class="comment">#instance = object.__new__(cls)</span></div><div class="line">		<span class="keyword">return</span> instance</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'new self  id:'</span>, id(self)</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self  id: <span class="number">69858136</span></div><div class="line">id(i)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">69858136L</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyInt</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		instance = int.__new__(cls)	<span class="comment"># 用int的模型构造实例</span></div><div class="line">		instance.to_str = <span class="keyword">lambda</span> self: str(self)</div><div class="line">		<span class="keyword">return</span> instance</div><div class="line"></div><div class="line">m = MyInt(<span class="number">1</span>)</div><div class="line">m</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">1</span></div><div class="line">m.to_str()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'1'</span></div></pre></td></tr></table></figure>
+<p><code>MyClass</code>与之前的定义没有区别。不过通过自定义的<code>__new__</code>函数可以在实例存在之前介入，直接操纵实现什么样的实例，并且还能够给实例赋予一些属性和方法。<br><code>MyInt</code>的定义就更加明显，虽然没有继承于<code>int</code>，但是在<code>__new__</code>函数中直接操纵其实例按照<code>int</code>的模型构造，并且赋予了实例一个方法<code>to_str</code>。结果<code>MyInt</code>类就和直接继承<code>int</code>没有明显的区别。python中的单例模式可以更好的说明：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span><span class="params">(object)</span>:</span></div><div class="line">	instance = <span class="keyword">None</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span>	<span class="comment"># __init__不能够做到这一点，因为在调用之前，实例就存在了</span></div><div class="line">		<span class="keyword">if</span> <span class="keyword">not</span> cls.instance:</div><div class="line">			cls.instance = super(Singleton, cls).__new__(cls)</div><div class="line">		<span class="keyword">return</span> cls.instnace</div><div class="line"></div><div class="line">s1 = Singleton()</div><div class="line">s2 = Singleton()</div><div class="line">s1 <span class="keyword">is</span> s2	<span class="comment"># 同一个实例</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">True</span></div></pre></td></tr></table></figure>
+<p>可以看到，通过<code>__new__</code>可以从一开始就定制如何实现实例(其内存模型)。</p>
+<h2 id="type的传说"><a href="#type的传说" class="headerlink" title="type的传说"></a>type的传说</h2><hr>
+<p>python中一切皆对象。一切都是其基类的实例。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">isinstance(1, int) -&gt; True</div><div class="line">isinstance(int, type) -&gt; True</div><div class="line">isinstance(type, type) -&gt; True</div><div class="line"></div><div class="line">isinstance('abc', str) -&gt; True</div><div class="line">issubclass(str, basestring) -&gt; True</div><div class="line">isinstance(basestring, type) -&gt; True</div><div class="line">isinstance(type, type) -&gt; True</div><div class="line"></div><div class="line">isinstance(object, type) -&gt;True</div><div class="line"></div><div class="line">class MyClass(object):</div><div class="line">	pass</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line">isinstance(i, MyClass) -&gt; True</div><div class="line">issubclass(MyClass, object) -&gt; True</div><div class="line">isinstance(MyClass, type) -&gt; True</div></pre></td></tr></table></figure>
+<p><code>object</code>是新式类的根本基类；<code>type</code>则是所有超类的根本基类，甚至是它自己的基类。<code>MyClass</code>是<code>type</code>的实例，当<code>MyClass</code>被定义的时候(python解释器编译这段代码时)就是实例化的过程。可以理解为，python解释器定义了一个变量为<code>MyClass</code>，它是<code>type</code>的实例。而<code>type</code>这种能够用来定义类的类则称为超类<code>metaclass</code>。</p>
+<p>前面说过，<code>MyClass</code>是静态定义的类，在运行前就定义好了属性和方法。python提供了<code>type</code>关键字用于动态定义类。按照python文档的说明，下面两种定义类的方式是等价的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">class MyClass(object):</div><div class="line">	pass</div><div class="line"></div><div class="line">MyClass = type(&apos;MyClass&apos;, (object,), &#123;&#125;) # 第二个参数必须是 tuple类型</div></pre></td></tr></table></figure>
+<p>通过实例化<code>type</code>，python提供了一种动态创建类的方式。type(name, bases, attrs)，第一个name参数给定类的名字<code>MyClass.__name__</code>属性，第二个参数bases给定继承的多个基类，第三个参数attrs确定<code>MyClass</code>的一些属性和方法。由于<code>type</code>能够定义类，那么所有继承<code>type</code>的类，也就有了<code>type</code>这种神奇的定义类的功能，从而成为超类。</p>
+<p>普通类可以在定义时通过<code>__new__</code>函数操纵生成的实例，所有继承<code>type</code>的超类也可以通过<code>__new__</code>来操纵生成的类(超类的实例)。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">class MetaClass(type):	# 超类继承type，普通类继承object</div><div class="line">	def __new__(cls, name, bases, attrs):</div><div class="line">		print 'name:', name</div><div class="line">		print 'bases:', bases</div><div class="line">		print 'attrs:', attrs</div><div class="line">		new_class = super(MetaClass, cls).__new__(cls, name, bases, attrs)</div><div class="line">		return new_class</div><div class="line"></div><div class="line">MyClass = MetaClass('MyClass', (object,), &#123;&#125;) # 手动实例化实现MyClass</div><div class="line">&gt;&gt;&gt; name: MyClass</div><div class="line">&gt;&gt;&gt; bases: (object,)</div><div class="line">&gt;&gt;&gt; attrs: &#123;&#125;</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line">print type(i)</div><div class="line">&gt;&gt;&gt; &lt;class '__main__.MyClass'&gt;</div><div class="line"></div><div class="line">isinstance(i, MyClass) -&gt; True</div><div class="line">isinstance(MyClass, MetaClass) -&gt; True</div></pre></td></tr></table></figure>
+<p><code>MetaClass</code>也具有了<code>type</code>的能力。但是，这样通过超类动态实现<code>MyClass</code>需要额外的手动实例化，非常的不协调。python提供了另一种方法，通过定义<code>__metaclass__</code>属性，让解释器实现这一过程。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	__metaclass__ = MetaClass</div><div class="line"></div><div class="line">	cls_var = <span class="string">'var'</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span> <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>name: MyClass</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>bases: (object,)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>attrs: &#123;<span class="string">'cls_var'</span>: <span class="string">'var'</span>, <span class="string">'method'</span>: &lt;function m at <span class="number">0x000000000437E588</span>&gt;, \</div><div class="line"><span class="string">'__module__'</span>: <span class="string">'__main__'</span>, <span class="string">'__metaclass__'</span>: &lt;<span class="class"><span class="keyword">class</span> '<span class="title">__main__</span>.<span class="title">MetaClass</span>'&gt;&#125;</span></div></pre></td></tr></table></figure>
+<p>当类或者基类的属性中有<code>__metclass__</code>时，会调用<code>__metaclass__</code>进行类本身的生成，而不是默认的类生成过程。类自己的内存模型通过定义<code>__metaclass__</code>可以动态定制，其实例可以通过定义<code>__new__</code>函数实现定制。进行类定制的超类继承于<code>type</code>，通过定义<code>__new__</code>函数实现。</p>
+<p>可以简单总结为：超类继承于<code>type</code>，通过<code>__new__</code>定制超类的实例，即普通类；普通类继承于<code>object</code>，通过<code>__new__</code>定制普通类的实例。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2014/09/24/python_absolute_import/" rel="next" title="Python绝对导入">
+                <i class="fa fa-chevron-left"></i> Python绝对导入
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2014/11/02/django-LazyObject-惰性求值/" rel="prev" title="django中的惰性求值">
+                django中的惰性求值 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2014/10/11/python_metaclass超类/"
+           data-title="python中object/type/metaclass" data-url="http://fanchao01.github.io/blog/blog/2014/10/11/python_metaclass超类/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从object关键词说起"><span class="nav-number">1.</span> <span class="nav-text">从object关键词说起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#type的传说"><span class="nav-number">2.</span> <span class="nav-text">type的传说</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

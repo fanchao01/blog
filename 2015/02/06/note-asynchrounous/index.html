@@ -1,0 +1,746 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="对简单操作模型的理解
+堵塞与非堵塞
+堵塞(blocking):
+调用者(caller)必须等待操作完成才能返回。操作完成可能是异常、失败、返回空数据、返回不完整数据等。
+
+非堵塞(non-blocking):
+被调用者(call)立即返回，不会因为数据未到而等待。一般是指内核等待数据到达。
+
+
+无论是堵塞或者非堵塞，都可能返回空的数据，都需要数据从内核缓存区到用户缓存区的拷贝时间。堵塞操作可能因">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Unix中的几种I/O模型">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2015/02/06/note-asynchrounous/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="对简单操作模型的理解
+堵塞与非堵塞
+堵塞(blocking):
+调用者(caller)必须等待操作完成才能返回。操作完成可能是异常、失败、返回空数据、返回不完整数据等。
+
+非堵塞(non-blocking):
+被调用者(call)立即返回，不会因为数据未到而等待。一般是指内核等待数据到达。
+
+
+无论是堵塞或者非堵塞，都可能返回空的数据，都需要数据从内核缓存区到用户缓存区的拷贝时间。堵塞操作可能因">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/asyncio.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/blockingio.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/blockingio_server.jpg">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/nonblockingio.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/multiplexingio.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/asyncingio.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/ios.gif">
+<meta property="og:updated_time" content="2016-08-25T03:47:20.523Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Unix中的几种I/O模型">
+<meta name="twitter:description" content="对简单操作模型的理解
+堵塞与非堵塞
+堵塞(blocking):
+调用者(caller)必须等待操作完成才能返回。操作完成可能是异常、失败、返回空数据、返回不完整数据等。
+
+非堵塞(non-blocking):
+被调用者(call)立即返回，不会因为数据未到而等待。一般是指内核等待数据到达。
+
+
+无论是堵塞或者非堵塞，都可能返回空的数据，都需要数据从内核缓存区到用户缓存区的拷贝时间。堵塞操作可能因">
+<meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/asyncio.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2015/02/06/note-asynchrounous/"/>
+
+  <title> Unix中的几种I/O模型 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Unix中的几种I/O模型
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-02-06T00:00:00-08:00" content="2015-02-06">
+              2015-02-06
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/02/06/note-asynchrounous/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/02/06/note-asynchrounous/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="/blog/images/asyncio.gif" alt="image"></p>
+<h2 id="对简单操作模型的理解"><a href="#对简单操作模型的理解" class="headerlink" title="对简单操作模型的理解"></a>对简单操作模型的理解</h2><hr>
+<h3 id="堵塞与非堵塞"><a href="#堵塞与非堵塞" class="headerlink" title="堵塞与非堵塞"></a>堵塞与非堵塞</h3><ul>
+<li><p>堵塞(blocking):</p>
+<p>调用者(caller)必须等待操作完成才能返回。操作完成可能是异常、失败、返回空数据、返回不完整数据等。</p>
+</li>
+<li><p>非堵塞(non-blocking):</p>
+<p>被调用者(call)立即返回，不会因为数据未到而等待。一般是指内核等待数据到达。</p>
+</li>
+</ul>
+<p>无论是堵塞或者非堵塞，都可能返回空的数据，都需要数据从内核缓存区到用户缓存区的拷贝时间。堵塞操作可能因为信号、异常而失败，也可能因为对方关闭连接返回空的数据。非堵塞操作会直接返回空的数据或者已经存在的(部分)数据，不会等待要求的数据全部到达内核后才返回。</p>
+<h3 id="同步与异步"><a href="#同步与异步" class="headerlink" title="同步与异步"></a>同步与异步</h3><ul>
+<li><p>同步模型(synchronous)</p>
+<p>同步模型是指操作顺序执行，前续操作和后续操作顺序执行，后续操作发生时前序逻辑已经完成。</p>
+</li>
+<li><p>异步模型(asynchronous)</p>
+<p>异步模型是指操作顺序非顺序执行，后续操作执行时前序操作还未完成，前序操作可能在后台处理，可能挂起。</p>
+</li>
+</ul>
+<p>同步与异步的主要区别是，在后续操作开始时前续操作是否真正完成，或者说在后续操作和前续操作之间是否能够执行其他的操作。</p>
+<h2 id="对简单模型的类比"><a href="#对简单模型的类比" class="headerlink" title="对简单模型的类比"></a>对简单模型的类比</h2><hr>
+<p>生活中我们会在医院取药，利用该场景做一个类比。药单是操作的对象，类比fd；药是数据，类比data；取药是操作，类比recv；取药系统、药剂师（护士）等类比操作系统。</p>
+<h3 id="堵塞模型"><a href="#堵塞模型" class="headerlink" title="堵塞模型"></a>堵塞模型</h3><p>你拿着药单去药剂室取药5盒，把药单交给药剂师发起取药的操作，药剂师并不立刻回应你。你在窗口一直等(堵塞），药剂师拿到药单发现手头没有对应的药，于是自己或者让护士去库房取，等在库房取回后交给你，此次取药堵塞操作完成。但是你发现药剂师只给了你三盒，于是你又重复取药2盒的操作，这个时候药剂师拿到药单发现手头就有2盒，于是立马给你，此次堵塞操作也完成。或者药剂师拿到药单之后，突然出现意外你被赶跑了，此次堵塞取药操也完成，虽然你没有拿到药，但是被告知出意外了，你自己看着办吧。</p>
+<h3 id="非堵塞模型"><a href="#非堵塞模型" class="headerlink" title="非堵塞模型"></a>非堵塞模型</h3><p>你又来取药，把药单交给药剂师发起取药操作，药剂师拿到药单发现手头没有对应的药，立马（非堵塞)告诉你没有药了，此次非堵塞取药操作完成。或者，药剂师手头正好有3盒立即给了你，此次非堵塞操作也完成。</p>
+<p>可见，堵塞和非堵塞的重要区别是药剂师手头没有药时，他会让护士去取等回来再给你，还是立马告诉你没有。</p>
+<h3 id="同步模型"><a href="#同步模型" class="headerlink" title="同步模型"></a>同步模型</h3><p>你再次来取药，无论是那种方式，你必须在取到药之间不能做其他任何的操作，即使你被堵塞在窗口等待药剂师去库房取药的时候。</p>
+<h3 id="异步模型"><a href="#异步模型" class="headerlink" title="异步模型"></a>异步模型</h3><p>你最后一次取药，在把药单给药剂师之后和药拿到手之间，你可以干点别的事情，玩玩手机、听听音乐或者去其他窗口取别的药。</p>
+<p>可见，同步与异步的区别在于你发起取药的操作和药到手之间，能不能干其他的事情。</p>
+<h3 id="同步堵塞"><a href="#同步堵塞" class="headerlink" title="同步堵塞"></a>同步堵塞</h3><p>你在取药的过程中执行堵塞操作，直到药到手为止。</p>
+<h3 id="同步非堵塞"><a href="#同步非堵塞" class="headerlink" title="同步非堵塞"></a>同步非堵塞</h3><p>同步非堵塞几乎没什么用，你把药单给药剂师，但是药剂师手头没有药立马告诉你，你需要再次发起取药操作直到拿到药。这个就是轮询模式，还不如同步堵塞，因为浪费了药剂师（系统）不断回应你的时间。</p>
+<h3 id="异步堵塞"><a href="#异步堵塞" class="headerlink" title="异步堵塞"></a>异步堵塞</h3><p>现实中几乎没用的模型，因为你总是等待取药，在这期间不能干别的，因为只有1个你。但是在计算机的世界中你会分身术(线程)，你的分身可以去做别的事情。</p>
+<h3 id="异步非堵塞"><a href="#异步非堵塞" class="headerlink" title="异步非堵塞"></a>异步非堵塞</h3><p>异步非阻塞模型通常是（框架给）用户使用的模型，你去取药，把药单交给药剂师，然后不等待结果自己就走了，待药从库房拿到后药剂师再想法设法给你。</p>
+<h3 id="异步的几种接口"><a href="#异步的几种接口" class="headerlink" title="异步的几种接口"></a>异步的几种接口</h3><hr>
+<p>药剂师的<code>想方设法</code>就是不同的表现形式，异步接口：</p>
+<ul>
+<li><p>事件通知</p>
+<p>医院很先进，你把药单给药剂师后，自己去干别的，等广播你的名字后，你再去取药。这个是事件通知。</p>
+</li>
+<li><p>回调</p>
+<p>医院护士很多，你把药单给药剂师并且把自己喝多少药之类的也一并交代。等药取到后，药剂师派个小护士直接把药给你灌下去。这个是回调，需要先定义后续操作逻辑（喝药），再注册（在取药的时候告诉药剂师）。</p>
+</li>
+<li><p>占位符</p>
+<p>你把药单给药剂师，药剂师给你的是药盒子，你以为拿到了真实的药，然后去进行打热水、打开盒子、拿药的一些列操作，等你真正喝药的时候，药会被药剂师偷偷摸摸的放入盒子里，这需要特殊的药盒子。</p>
+</li>
+<li><p>状态</p>
+<p>类似事件通知，但不是直接通知你，而是有个大屏幕。当药剂师从库房拿到药时会在大屏幕打出你的名字，于是你再次跑到窗口拿到药。</p>
+<p>如果你同时需要取药、打针两件事请，你分别在医药窗口和注射窗口提交了单据。当轮到你的时候，大屏幕只出现你的名字，你不得已只好挨个问哪个窗口准备好了（select）。</p>
+<p>但是另外一个医院很先进，不仅打出你的名字还打出窗口号，于是你直接去已经准备好的窗口即可（epoll）。</p>
+</li>
+</ul>
+<h2 id="Unix下的几种IO模型"><a href="#Unix下的几种IO模型" class="headerlink" title="Unix下的几种IO模型"></a>Unix下的几种IO模型</h2><hr>
+<p>说完简单的类比回到Unix平台。在Unix(linux)平台下有<a href="http://english.tebyan.net/newindex.aspx?pid=31159&amp;BookID=23760&amp;PageIndex=92&amp;Language=3#ch06fig01" target="_blank" rel="external">五种I/O模型</a>：</p>
+<ul>
+<li>堵塞I/O模型(blocking I/O)</li>
+<li>非堵塞I/O模型(un-blocking I/O)</li>
+<li>I/O多路复用模型(select, poll, epoll)</li>
+<li>信号驱动I/O模型(SIGIO)</li>
+<li>异步I/O模型(posix aio_functions)</li>
+</ul>
+<p>I/O操作一般分为两个阶段：</p>
+<ol>
+<li>等待数据达到内核缓存区</li>
+<li>将数据从内核拷贝到用户进程 </li>
+</ol>
+<p>我们用<code>recvfrom</code>定义操作，并且将数据分为在内核缓冲区和用户进程缓冲区。</p>
+<h3 id="堵塞I-O模型"><a href="#堵塞I-O模型" class="headerlink" title="堵塞I/O模型"></a>堵塞I/O模型</h3><p><img src="/blog/images/blockingio.gif" alt="image"></p>
+<p>堵塞I/O模型中，先在内核中等待数据到来，再等待数据从内核拷贝到用户进程，两个阶段都被堵塞。下图是简单的一问一答堵塞型的服务器。</p>
+<p><img src="/blog/images/blockingio_server.jpg" alt="image"></p>
+<h3 id="非堵塞I-O模型"><a href="#非堵塞I-O模型" class="headerlink" title="非堵塞I/O模型"></a>非堵塞I/O模型</h3><p><img src="/blog/images/nonblockingio.gif" alt="image"></p>
+<p>非堵塞I/O模型中操作<code>recvfrom</code>立即返回，为了得到完整数据需要不断的发起操作，这个就是轮询。<code>recvfrom</code>实际上有两个作用，第一询问数据是否到来，第二得到数据。</p>
+<h3 id="I-O多路复用"><a href="#I-O多路复用" class="headerlink" title="I/O多路复用"></a>I/O多路复用</h3><p>I/O多路复用是同步还是异步比较模糊。像上面那样轮询一个fd效率比较底下，多路复用一次可以询问多个fd的数据是否到来。于是，将<code>recvfrom</code>的两个作用拆分成2个函数ask和read，ask堵塞（非堵塞没有意义）的一次询问多个fd，任何一个fd的数据到达就返回，然后再发起非堵塞read操作。如果ask的返回不能确定哪个fd的数据准备好了，就是select模型；如果同时返回确定的已准备好数据的fd，就是epoll模型。 </p>
+<p>站在处理所有fd的角度，多路复用I/O依然是同步堵塞模型；但是站在每个fd的角度（每个IO操作的角度），处理单个fd的整个I/O操作时也处理了其他fd的I/O操作，因此是异步；而且每个fd都需要等待数据从内核拷贝到用户缓冲区，因此也是堵塞操作。所以一般认为I/O多路复用是异步堵塞模型。（通过把这种模型新起个个名字可以看出确实比较难以用堵塞/非堵塞、同步/异步来定义）</p>
+<p><img src="/blog/images/multiplexingio.gif" alt="image"> </p>
+<h3 id="异步I-O"><a href="#异步I-O" class="headerlink" title="异步I/O"></a>异步I/O</h3><p>该异步I/O完全符合异步的要求，在调用时立即返回并且在数据到达后通过信号来通知进程。Unix类系统最常见的异步是回调，通过注册回调由内核在事件发生时调用，例如信号。在这里等于是把事件（数据到达）通过信号的方式通知用户让用户去处理了。需要注意异步I/O没有堵塞，发起操作后立即返回，当信号到来时数据已经被拷贝到用户缓冲区中了。</p>
+<p><img src="/blog/images/asyncingio.gif" alt="image"> </p>
+<h2 id="完整的I-O模型定义"><a href="#完整的I-O模型定义" class="headerlink" title="完整的I/O模型定义"></a>完整的I/O模型定义</h2><hr>
+<ul>
+<li>A synchronous I/O operation causes the requesting process to be blocked until that I/O operation completes;</li>
+<li><p>An asynchronous I/O operation does not cause the requesting process to be blocked;</p>
+</li>
+<li><p>异步同步通过在一完整的I/O操作时是不是有其他I/O操作来判断。无论是等待数据到达内核，还是等待数据从内核缓冲区拷贝到用户缓冲区都是堵塞模型。</p>
+</li>
+</ul>
+<h2 id="几种不同I-O模型的异同"><a href="#几种不同I-O模型的异同" class="headerlink" title="几种不同I/O模型的异同"></a>几种不同I/O模型的异同</h2><hr>
+<p><img src="/blog/images/ios.gif" alt="image"> </p>
+<p>简单总结：</p>
+<ol>
+<li>异步非堵塞I/O模型，内核帮用户完成了整个数据的传送。</li>
+<li>堵塞I/O模型，用户需要至少等待一个阶段的I/O传送。</li>
+<li>异步模型，用户在完成一次I/O操作期间，可以进行其他的I/O操作。</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2015/01/19/python-tornado-utils/" rel="next" title="tornado中一些通用的函数和类">
+                <i class="fa fa-chevron-left"></i> tornado中一些通用的函数和类
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2015/04/13/python-flyweight/" rel="prev" title="python中的享元模式(flyweight)">
+                python中的享元模式(flyweight) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2015/02/06/note-asynchrounous/"
+           data-title="Unix中的几种I/O模型" data-url="http://fanchao01.github.io/blog/blog/2015/02/06/note-asynchrounous/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#对简单操作模型的理解"><span class="nav-number">1.</span> <span class="nav-text">对简单操作模型的理解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞与非堵塞"><span class="nav-number">1.1.</span> <span class="nav-text">堵塞与非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步与异步"><span class="nav-number">1.2.</span> <span class="nav-text">同步与异步</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对简单模型的类比"><span class="nav-number">2.</span> <span class="nav-text">对简单模型的类比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞模型"><span class="nav-number">2.1.</span> <span class="nav-text">堵塞模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非堵塞模型"><span class="nav-number">2.2.</span> <span class="nav-text">非堵塞模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步模型"><span class="nav-number">2.3.</span> <span class="nav-text">同步模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步模型"><span class="nav-number">2.4.</span> <span class="nav-text">异步模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步堵塞"><span class="nav-number">2.5.</span> <span class="nav-text">同步堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步非堵塞"><span class="nav-number">2.6.</span> <span class="nav-text">同步非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步堵塞"><span class="nav-number">2.7.</span> <span class="nav-text">异步堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步非堵塞"><span class="nav-number">2.8.</span> <span class="nav-text">异步非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步的几种接口"><span class="nav-number">2.9.</span> <span class="nav-text">异步的几种接口</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Unix下的几种IO模型"><span class="nav-number">3.</span> <span class="nav-text">Unix下的几种IO模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞I-O模型"><span class="nav-number">3.1.</span> <span class="nav-text">堵塞I/O模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非堵塞I-O模型"><span class="nav-number">3.2.</span> <span class="nav-text">非堵塞I/O模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#I-O多路复用"><span class="nav-number">3.3.</span> <span class="nav-text">I/O多路复用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步I-O"><span class="nav-number">3.4.</span> <span class="nav-text">异步I/O</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完整的I-O模型定义"><span class="nav-number">4.</span> <span class="nav-text">完整的I/O模型定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几种不同I-O模型的异同"><span class="nav-number">5.</span> <span class="nav-text">几种不同I/O模型的异同</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

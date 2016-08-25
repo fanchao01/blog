@@ -1,0 +1,662 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="前言
+
+软件开发中遇到的所有问题，都可以通过增加一层抽象而得以解决。
+代理模式，为其他对象提供一种代理以控制对这个对象的访问。
+
+django中的LazyObject
+django.utils.functional.py
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849">
+<meta property="og:type" content="article">
+<meta property="og:title" content="django中的惰性求值">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2014/11/02/django-LazyObject-惰性求值/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="前言
+
+软件开发中遇到的所有问题，都可以通过增加一层抽象而得以解决。
+代理模式，为其他对象提供一种代理以控制对这个对象的访问。
+
+django中的LazyObject
+django.utils.functional.py
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849">
+<meta property="og:updated_time" content="2016-08-25T03:37:57.979Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="django中的惰性求值">
+<meta name="twitter:description" content="前言
+
+软件开发中遇到的所有问题，都可以通过增加一层抽象而得以解决。
+代理模式，为其他对象提供一种代理以控制对这个对象的访问。
+
+django中的LazyObject
+django.utils.functional.py
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2014/11/02/django-LazyObject-惰性求值/"/>
+
+  <title> django中的惰性求值 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                django中的惰性求值
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-02T00:00:00-07:00" content="2014-11-02">
+              2014-11-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/11/02/django-LazyObject-惰性求值/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/11/02/django-LazyObject-惰性求值/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><hr>
+<ol>
+<li>软件开发中遇到的所有问题，都可以通过增加一层抽象而得以解决。</li>
+<li>代理模式，为其他对象提供一种代理以控制对这个对象的访问。</li>
+</ol>
+<h3 id="django中的LazyObject"><a href="#django中的LazyObject" class="headerlink" title="django中的LazyObject"></a><code>django</code>中的<code>LazyObject</code></h3><hr>
+<p>django.utils.functional.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line">empty = object()</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">new_method_proxy</span><span class="params">(func)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(self, *args)</span>:</span></div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup()</div><div class="line">        <span class="keyword">return</span> func(self._wrapped, *args)</div><div class="line">    <span class="keyword">return</span> inner</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">LazyObject</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    A wrapper for another class that can be used to delay instantiation of the</div><div class="line">    wrapped class.</div><div class="line"></div><div class="line">	# 一个封装类，被封装的对象能够延迟实例化的时间</div><div class="line"></div><div class="line">    By subclassing, you have the opportunity to intercept and alter the</div><div class="line">    instantiation. If you don't need to do that, use SimpleLazyObject.</div><div class="line"></div><div class="line">	# 通过继承此类，可以介入和改变被封装的实例。如果不需要这样做，可以使用SimpleLazyObject</div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">        self._wrapped = empty</div><div class="line"></div><div class="line">    __getattr__ = new_method_proxy(getattr)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setattr__</span><span class="params">(self, name, value)</span>:</span></div><div class="line">        <span class="keyword">if</span> name == <span class="string">"_wrapped"</span>:</div><div class="line">            <span class="comment"># Assign to __dict__ to avoid infinite __setattr__ loops.</span></div><div class="line">			<span class="comment"># self._wrapped = value 的写法会导致无限循环调用 __setattr__</span></div><div class="line">            self.__dict__[<span class="string">"_wrapped"</span>] = value</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">			<span class="comment"># 进行赋值时，再通过 _setup 进行实例化</span></div><div class="line">            <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">                self._setup()</div><div class="line">            setattr(self._wrapped, name, value)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__delattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">		<span class="comment"># 进行取值时， 再通过 _setup 进行实例化</span></div><div class="line">        <span class="keyword">if</span> name == <span class="string">"_wrapped"</span>:</div><div class="line">            <span class="keyword">raise</span> TypeError(<span class="string">"can't delete _wrapped."</span>)</div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup()</div><div class="line">        delattr(self._wrapped, name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Must be implemented by subclasses to initialise the wrapped object.</div><div class="line">        """</div><div class="line">        <span class="keyword">raise</span> NotImplementedError</div><div class="line"></div><div class="line">    <span class="comment"># introspection support:</span></div><div class="line">    __dir__ = new_method_proxy(dir)</div></pre></td></tr></table></figure>
+<p>增加一个<code>LazyObject</code>类封装需要延迟实例化的对象，通过改写<code>__getattr__</code>、<code>__setattr__</code>和<code>__delattr__</code>进行代理和按需实例化。(代理模式ProxyPattern）。</p>
+<h2 id="django中的SimpleLazyObject"><a href="#django中的SimpleLazyObject" class="headerlink" title="django中的SimpleLazyObject"></a>django中的SimpleLazyObject</h2><hr>
+<p>如<code>LazyObject</code>中所说，当只是简单的代理而不需要改变封装的<code>_wrapped</code>时，只需使用<code>SimpleLazyObject</code>。 这个代理类需要一个<code>func</code>参数，当需要实例化时调用。这个func参数可以是被封装的类、延迟求值的函数等，任何需要代理的对象。为了实际使用需要处理一些特殊方法，基本的实现框架如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SimpleLazyObject</span><span class="params">(LazyObject)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, func)</span>:</span></div><div class="line">		self.__dict__[<span class="string">'_setupfunc'</span>] = func</div><div class="line">	</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></div><div class="line">		self._wrapped = self._setupfunc()</div></pre></td></tr></table></figure>
+<h2 id="真实的代理类"><a href="#真实的代理类" class="headerlink" title="真实的代理类"></a>真实的代理类</h2><hr>
+<ol>
+<li>重写<code>_setup</code>，被封装的类为 <code>self._wrapped = Setting(settings_module)</code></li>
+<li>通过提供<code>configure</code>接口，可以由用户修改内部被封装的配置类·</li>
+</ol>
+<p>django.conf.settings(django.conf.<strong>init</strong>.py)</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">LazySettings</span><span class="params">(LazyObject)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    A lazy proxy for either global Django settings or a custom settings object.</div><div class="line">    The user can manually configure settings prior to using them. Otherwise,</div><div class="line">    Django uses the settings module pointed to by DJANGO_SETTINGS_MODULE.</div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self, name=None)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Load the settings module pointed to by the environment variable. This</div><div class="line">        is used the first time we need any settings at all, if the user has not</div><div class="line">        previously configured the settings manually.</div><div class="line">        """</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            settings_module = os.environ[ENVIRONMENT_VARIABLE]</div><div class="line">            <span class="keyword">if</span> <span class="keyword">not</span> settings_module: <span class="comment"># If it's set but is an empty string.</span></div><div class="line">                <span class="keyword">raise</span> KeyError</div><div class="line">        <span class="keyword">except</span> KeyError:</div><div class="line">            desc = (<span class="string">"setting %s"</span> % name) <span class="keyword">if</span> name <span class="keyword">else</span> <span class="string">"settings"</span></div><div class="line">            <span class="keyword">raise</span> ImproperlyConfigured(</div><div class="line">                <span class="string">"Requested %s, but settings are not configured. "</span></div><div class="line">                <span class="string">"You must either define the environment variable %s "</span></div><div class="line">                <span class="string">"or call settings.configure() before accessing settings."</span></div><div class="line">                % (desc, ENVIRONMENT_VARIABLE))</div><div class="line"></div><div class="line">        self._wrapped = Settings(settings_module)</div><div class="line">        self._configure_logging()</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup(name)</div><div class="line">        <span class="keyword">return</span> getattr(self._wrapped, name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_configure_logging</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Setup logging from LOGGING_CONFIG and LOGGING settings.</div><div class="line">        """</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> sys.warnoptions:</div><div class="line">            <span class="keyword">try</span>:</div><div class="line">                <span class="comment"># Route warnings through python logging</span></div><div class="line">                logging.captureWarnings(<span class="keyword">True</span>)</div><div class="line">                <span class="comment"># Allow DeprecationWarnings through the warnings filters</span></div><div class="line">                warnings.simplefilter(<span class="string">"default"</span>, DeprecationWarning)</div><div class="line">            <span class="keyword">except</span> AttributeError:</div><div class="line">                <span class="comment"># No captureWarnings on Python 2.6, DeprecationWarnings are on anyway</span></div><div class="line">                <span class="keyword">pass</span></div><div class="line"></div><div class="line">        <span class="keyword">if</span> self.LOGGING_CONFIG:</div><div class="line">            <span class="keyword">from</span> django.utils.log <span class="keyword">import</span> DEFAULT_LOGGING</div><div class="line">            <span class="comment"># First find the logging configuration function ...</span></div><div class="line">            logging_config_path, logging_config_func_name = self.LOGGING_CONFIG.rsplit(<span class="string">'.'</span>, <span class="number">1</span>)</div><div class="line">            logging_config_module = importlib.import_module(logging_config_path)</div><div class="line">            logging_config_func = getattr(logging_config_module, logging_config_func_name)</div><div class="line"></div><div class="line">            logging_config_func(DEFAULT_LOGGING)</div><div class="line"></div><div class="line">            <span class="keyword">if</span> self.LOGGING:</div><div class="line">                <span class="comment"># Backwards-compatibility shim for #16288 fix</span></div><div class="line">                compat_patch_logging_config(self.LOGGING)</div><div class="line"></div><div class="line">                <span class="comment"># ... then invoke it with the logging settings</span></div><div class="line">                logging_config_func(self.LOGGING)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">configure</span><span class="params">(self, default_settings=global_settings, **options)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Called to manually configure the settings. The 'default_settings'</div><div class="line">        parameter sets where to retrieve any unspecified values from (its</div><div class="line">        argument must support attribute access (__getattr__)).</div><div class="line">        """</div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> <span class="keyword">not</span> empty:</div><div class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'Settings already configured.'</span>)</div><div class="line">        holder = UserSettingsHolder(default_settings)</div><div class="line">        <span class="keyword">for</span> name, value <span class="keyword">in</span> options.items():</div><div class="line">            setattr(holder, name, value)</div><div class="line">        self._wrapped = holder</div><div class="line">        self._configure_logging()</div><div class="line"></div><div class="line"><span class="meta">    @property</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">configured</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Returns True if the settings have already been configured.</div><div class="line">        """</div><div class="line">        <span class="keyword">return</span> self._wrapped <span class="keyword">is</span> <span class="keyword">not</span> empty</div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><hr>
+<p>1.通过增加一个代理类，封装了延迟求值(实例化)的对象。通过增加一个层解决问题。<br>2.再通过改写<code>__setattr__</code>、<code>__getattr__</code>和<code>__delattr__</code>方法，将对代理类的操作，直接委托给被代理的类。代理模式。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2014/10/11/python_metaclass超类/" rel="next" title="python中object/type/metaclass">
+                <i class="fa fa-chevron-left"></i> python中object/type/metaclass
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2014/11/04/django-template系统/" rel="prev" title="django模板系统-源码分析-1">
+                django模板系统-源码分析-1 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2014/11/02/django-LazyObject-惰性求值/"
+           data-title="django中的惰性求值" data-url="http://fanchao01.github.io/blog/blog/2014/11/02/django-LazyObject-惰性求值/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#django中的LazyObject"><span class="nav-number">1.1.</span> <span class="nav-text">django中的LazyObject</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#django中的SimpleLazyObject"><span class="nav-number">2.</span> <span class="nav-text">django中的SimpleLazyObject</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#真实的代理类"><span class="nav-number">3.</span> <span class="nav-text">真实的代理类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

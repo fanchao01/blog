@@ -1,0 +1,673 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="一个简单的tornado应用实例
+1234567891011121314import tornado.ioloopimport tornado.webclass MainHandler(tornado.web.RequestHandler):    def get(self):        self.write(&quot;Hello, world&quot;)application = tornado.web.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tornado源码分析-1">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2015/01/18/python-tornado/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="一个简单的tornado应用实例
+1234567891011121314import tornado.ioloopimport tornado.webclass MainHandler(tornado.web.RequestHandler):    def get(self):        self.write(&quot;Hello, world&quot;)application = tornado.web.">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/asyncio.jpg">
+<meta property="og:image" content="http://www.tornadoweb.org/en/stable/guide/async.html">
+<meta property="og:updated_time" content="2016-08-25T03:57:52.339Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="tornado源码分析-1">
+<meta name="twitter:description" content="一个简单的tornado应用实例
+1234567891011121314import tornado.ioloopimport tornado.webclass MainHandler(tornado.web.RequestHandler):    def get(self):        self.write(&quot;Hello, world&quot;)application = tornado.web.">
+<meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/asyncio.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2015/01/18/python-tornado/"/>
+
+  <title> tornado源码分析-1 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                tornado源码分析-1
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-18T00:00:00-08:00" content="2015-01-18">
+              2015-01-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/tornado/" itemprop="url" rel="index">
+                    <span itemprop="name">tornado</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/01/18/python-tornado/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/01/18/python-tornado/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="/blog/images/asyncio.jpg" alt="image"></p>
+<h3 id="一个简单的tornado应用实例"><a href="#一个简单的tornado应用实例" class="headerlink" title="一个简单的tornado应用实例"></a>一个简单的tornado应用实例</h3><hr>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> tornado.ioloop</div><div class="line"><span class="keyword">import</span> tornado.web</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainHandler</span><span class="params">(tornado.web.RequestHandler)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self)</span>:</span></div><div class="line">        self.write(<span class="string">"Hello, world"</span>)</div><div class="line"></div><div class="line">application = tornado.web.Application([</div><div class="line">    (<span class="string">r"/"</span>, MainHandler),</div><div class="line">])</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</div><div class="line">    application.listen(<span class="number">8888</span>)</div><div class="line">    tornado.ioloop.IOLoop.instance().start()</div></pre></td></tr></table></figure>
+<p>tornado框架以<code>Application</code>为入口，以<code>RequestHandler</code>为接口，以<code>IOLoop</code>为核心进行构建。上面的例子创建了一个简单的<code>Hello，World</code>程序。tornado以异步高性能为目的，采用异步非堵塞网络IO模型，低层利用<code>epoll</code>（linux平台），特别适合高性能长连接的应用场景。</p>
+<h3 id="异步非堵塞编程模型"><a href="#异步非堵塞编程模型" class="headerlink" title="异步非堵塞编程模型 "></a>异步非堵塞编程模型 <img src="http://www.tornadoweb.org/en/stable/guide/async.html" alt="wiki"></h3><hr>
+<p>异步函数，会在结束所有操作前就返回，其中的一些操作（特别是耗时间的IO操作）会交给后台去运行，这些操作完成后再触发应用中的其它函数逻辑。一般有4种类型的异步接口：</p>
+<ul>
+<li>回调参数。<br>通过参数传入callback等待完成后再进行最后的callback操作。<br><code>asynchronous_fetch-&gt;http_client.fetch-&gt;handle_respones-&gt;callback</code>，</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.httpclient <span class="keyword">import</span> AsyncHTTPClient</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">asynchronous_fetch</span><span class="params">(url, callback)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle_response</span><span class="params">(response)</span>:</span></div><div class="line">        callback(response.body)</div><div class="line">    http_client.fetch(url, callback=handle_response)</div></pre></td></tr></table></figure>
+<ul>
+<li>返回一个占位实例。<br>通过两个Future实例完成一步步的回调，事件通知或者订阅者-发布者模型。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.concurrent <span class="keyword">import</span> Future</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">async_fetch_future</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    my_future = Future()</div><div class="line">    fetch_future = http_client.fetch(url)</div><div class="line">    fetch_future.add_done_callback(</div><div class="line">        <span class="keyword">lambda</span> f: my_future.set_result(f.result()))</div><div class="line">    <span class="keyword">return</span> my_future</div></pre></td></tr></table></figure>
+<ul>
+<li><p>提交给队列。<br><code>nose.js</code>是这种模型，每个操作是一个事件提交给后台的其他线程库，完成后再交给主线程中的队列进行回调操作。</p>
+</li>
+<li><p>回调注册。<br><code>POSIX</code>信号是这种模型，通过注册回调函数。（这里我还不太清楚与回调参数有什么不同）</p>
+</li>
+</ul>
+<p>无论是哪种形式，异步模型都有一些通用逻辑，可以分为<code>堵塞前操作</code>，<code>堵塞操作</code>，<code>通知</code>，<code>堵塞后操作</code>。</p>
+<ul>
+<li><code>堵塞前操作</code>，立即完成的，发生在堵塞操作前的逻辑。</li>
+<li><code>堵塞操作</code>，堵塞操作，主要需要解决的部分。</li>
+<li><code>通知</code>，堵塞操作完成后，如何通知已经完成了堵塞操作</li>
+<li><code>堵塞后操作</code>，堵塞操作完成后的逻辑，一般处理堵塞操作的返回值。</li>
+</ul>
+<p>同步堵塞模型比较简单，所有逻辑操作都捆绑在一起，没有也不必进行<code>通知</code>。异步非堵塞模型需要重点处理<code>堵塞操作</code>和<code>通知</code>。一般的异步非堵塞使用callback模型，将<code>堵塞前操作</code>和<code>堵塞后逻辑</code>显式分开，通过向<code>堵塞操作</code>传递<code>堵塞后操作</code>进行<code>通知</code>机制（callback）。</p>
+<h3 id="tornado中的异步非堵塞模型"><a href="#tornado中的异步非堵塞模型" class="headerlink" title="tornado中的异步非堵塞模型"></a>tornado中的异步非堵塞模型</h3><hr>
+<p>tornado的异步接口利用Python的协程语法<code>yield</code>可以暂停操作，将<code>堵塞逻辑</code>、<code>通知</code>和<code>堵塞后操作</code>捆绑到一起，不用显式的拆分最大限度的保持和同步接口的一致性。通过<code>yield</code>让出<code>堵塞操作</code>交给<code>IOLoop</code>统一处理，再通过<code>Future</code>机制进行<code>通知</code>机制。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado <span class="keyword">import</span> gen</div><div class="line"></div><div class="line"><span class="meta">@gen.coroutine</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">fetch_coroutine</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()		<span class="comment"># 堵塞前操作</span></div><div class="line">    response = <span class="keyword">yield</span> http_client.fetch(url)	<span class="comment"># 堵塞操作</span></div><div class="line">    <span class="keyword">return</span> response.body	<span class="comment"># 堵塞后操作</span></div></pre></td></tr></table></figure>
+<p>tornado的异步堵塞模型低层采用<code>epoll</code>模型，通过（隐式）<code>Future</code>机制进行回调通知，通过<code>IOLoop</code>处理堵塞操作。简单的<code>IOLoop</code>逻辑示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Simplified inner loop of tornado.gen.Runner</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="comment"># send(x) makes the current yield return x.</span></div><div class="line">    <span class="comment"># It returns when the next yield is reached</span></div><div class="line">    future = self.gen.send(self.next) </div><div class="line">	<span class="comment"># 通过send 通知 协程进行 堵塞后操作</span></div><div class="line">	<span class="comment"># future衔接 堵塞前和堵塞后的逻辑</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">callback</span><span class="params">(f)</span>:</span></div><div class="line">        self.next = f.result()</div><div class="line">        self.run()</div><div class="line"></div><div class="line">    future.add_done_callback(callback)</div><div class="line">	<span class="comment"># 向future中注册辅助函数，进行回调后的通知</span></div></pre></td></tr></table></figure>
+<h3 id="tornado中核心类"><a href="#tornado中核心类" class="headerlink" title="tornado中核心类"></a>tornado中核心类</h3><hr>
+<p>tornado主要有两个核心类，<code>IOLoop</code>封装低层<code>epoll</code>集中处理堵塞操作。<code>iostream</code>封装<code>read、write</code>函数进行缓存和更方便的处理HTTP协议。具体分析稍后进行。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2015/01/17/python-parttern/" rel="next" title="Python中的单例模式">
+                <i class="fa fa-chevron-left"></i> Python中的单例模式
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2015/01/19/python-tornado-utils/" rel="prev" title="tornado中一些通用的函数和类">
+                tornado中一些通用的函数和类 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2015/01/18/python-tornado/"
+           data-title="tornado源码分析-1" data-url="http://fanchao01.github.io/blog/blog/2015/01/18/python-tornado/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#一个简单的tornado应用实例"><span class="nav-number">1.</span> <span class="nav-text">一个简单的tornado应用实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步非堵塞编程模型"><span class="nav-number">2.</span> <span class="nav-text">异步非堵塞编程模型 </span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tornado中的异步非堵塞模型"><span class="nav-number">3.</span> <span class="nav-text">tornado中的异步非堵塞模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tornado中核心类"><span class="nav-number">4.</span> <span class="nav-text">tornado中核心类</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

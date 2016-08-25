@@ -1,0 +1,725 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="## django中的tag和filter
+-------------------
+《django模板系统-源码分析1》中提到每个BLOCK块对应的解析函数filter以及node交由用户定制，parser只负责调用。这就给了用户自定义tag的机会，用户可以像使用插件一样在模板中使用自定义的tag，甚至用户可以扩展模板语言成为一个较为完整的独立语言（需要完成函数的实现、变量值的再绑定等）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="django模板系统-源码分析-2">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2014/11/18/django-template系统2/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="## django中的tag和filter
+-------------------
+《django模板系统-源码分析1》中提到每个BLOCK块对应的解析函数filter以及node交由用户定制，parser只负责调用。这就给了用户自定义tag的机会，用户可以像使用插件一样在模板中使用自定义的tag，甚至用户可以扩展模板语言成为一个较为完整的独立语言（需要完成函数的实现、变量值的再绑定等）。">
+<meta property="og:updated_time" content="2016-08-25T04:03:08.347Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="django模板系统-源码分析-2">
+<meta name="twitter:description" content="## django中的tag和filter
+-------------------
+《django模板系统-源码分析1》中提到每个BLOCK块对应的解析函数filter以及node交由用户定制，parser只负责调用。这就给了用户自定义tag的机会，用户可以像使用插件一样在模板中使用自定义的tag，甚至用户可以扩展模板语言成为一个较为完整的独立语言（需要完成函数的实现、变量值的再绑定等）。">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2014/11/18/django-template系统2/"/>
+
+  <title> django模板系统-源码分析-2 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                django模板系统-源码分析-2
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-18T00:00:00-08:00" content="2014-11-18">
+              2014-11-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/11/18/django-template系统2/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/11/18/django-template系统2/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+## django中的tag和filter
+-------------------
+《django模板系统-源码分析1》中提到每个BLOCK块对应的解析函数filter以及node交由用户定制，parser只负责调用。这就给了用户自定义tag的机会，用户可以像使用插件一样在模板中使用自定义的tag，甚至用户可以扩展模板语言成为一个较为完整的独立语言（需要完成函数的实现、变量值的再绑定等）。
+
+
+## django模板中的Library
+---------------------------
+首先看一下用户怎样实现自定义的tag和filter以及如何进行注册。这里注册的含义是指能够被Parser加载到局部变量`tags`和`filter`中。Parser在初始化方法中会将全局变量builtins中的Library实例中保存的tags和filter更新到局部变量中，而全局变量builtins在模块被加载的时候将默认的filters和tags加载进来。
+
+undefined
+
+## Library
+---------------
+为了方便自定义filter和tag，django定义了一些辅助函数和库类Library，用户按照一定的规则进行tag和filter的注册。
+
+### 注册filter
+
+Library类的filter方法可以作为装饰器以多种形式对自定义的filter函数进行注册。Library类的filter方法和filter\_function方法会互相调用，注意分场景分析。
+
+自定义的filter函数分为两种，一种是简单的函数；另一种本身是装饰器。Library.filter\_function的作用就是获取自定义filter的名字，对于前一种直接获取函数的名字；对于后一种则尽量获取其内部被装饰函数\_decorated\_function的名字。如果用户自定义的filter本身是个装饰器，最好把装饰器的内部变量\_decorated\_function设置为被装饰的函数，例如。
+
+undefined
+
+调用Library.filter进行自定义filter函数的注册有多种形式。
+
+1.第一种，直接调用形式。
+
+undefined
+
+2.第二种，不带参数的函数式调用形式
+
+undefined
+
+3.第三种，指定自定义filter的名字
+
+undefined
+
+4.第四种，指定其他参数
+
+undefined
+
+无论何种调用方式，都会进入Libaray.fiter的最后一个分支进行三部分的处理。第一部分注册filter函数`self.filters[name]=filter_func`；第二部分将传入的参数设置为filter\_func以及内部装饰函数的属性，这个filter\_func不一定是用户自定义的filter函数，在多数情况下是装饰了自定义filter的装饰器；第三部分设置名称`filter_func._filter_name=name`。
+
+
+### 注册tag
+
+自定义tag时，用户需要实现两个部分。一个用户自定义的继承了Node的类实现此tag的语义；另一个用户定义的解析函数，将对应tag的BLOCK类型token解析为语法树并返回对应的Node，即实现此tag的语法解析。我们以{% firstof %}为例说明，firstof会返回给定参数中第一个为真的变量`{% firstof 0 1 2 3 %} => 1`。
+
+undefined
+
+## defaultfilters
+------------------------
+选取几个比较常用的filter函数进行分析。
+
+### lower
+
+undefined
+
+lower函数将字符串转换为小写，stringfilter是装饰器以统一处理字符的安全问题。需要注意带双引号的变量代表字符，不然代表一个变量。`{{ "ABC"|lower }} => abc`；`{{ ABC|lower }} => ''`，后一个因为ABC代表变量且不存在而返回空字符串。
+
+### yesno
+
+undefined
+
+## defaulttags
+----------------------
+defaultfilters的逻辑比较简单，可以通过源码获知。而defaulttags则比较复杂，不仅因为包含两部分（语义分析和语法分析），还因为tags的种类较多，所有的逻辑功能都通过tags提供，例如判断、with、循环等。下面简单分析几种tag的实现。
+
+### with
+
+with 可以在模板中自定义变量，或者是给变量取别名。
+
+undefined
+
+首先看with的语法部分，do_with函数（django.template.defaulttags.do_with）。
+
+undefined
+
+然后继续看with的语义部分WithNode。
+
+undefined
+
+可以看到，with的实现非常清楚。do_with实现语法解析，WithNode实现语义求值，Context实例保存上下文的环境变量。
+
+### for
+
+for 可以在模板中进行循环求值。通过with的分析，可以简单将for理解为，设置同一(几)个环境变量的值(Context)、对子作用域求值(nodelist)、直到耗尽所有的环境变量的值、最后对所有值拼接。
+
+undefined
+
+do\_for将for分解为了4个部分，每个部分在实现语义的时候分别处理。
+
+undefined
+
+## 总结
+------------
+至此简单分析了django的template框架以及自定义filter和tag的实现。依托于django模板框架的良好架构，用户自定义的filter和tag十分方便简洁。
+
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2014/11/08/编写高质量代码/" rel="next" title="编写高质量代码-改善python程序的91个建议勘误">
+                <i class="fa fa-chevron-left"></i> 编写高质量代码-改善python程序的91个建议勘误
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2014/11/20/django-forms系统1/" rel="prev" title="django-源码分析-表单系统-1">
+                django-源码分析-表单系统-1 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2014/11/18/django-template系统2/"
+           data-title="django模板系统-源码分析-2" data-url="http://fanchao01.github.io/blog/blog/2014/11/18/django-template系统2/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <p class="post-toc-empty">此文章未包含目录</p>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

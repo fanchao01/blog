@@ -1,0 +1,679 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="Eventlet的Hub
+所有基于epoll(多路复用)的框架，总有一个事件循环处理中心，一般称为Hub。Eventlet中的Hub不仅是所有事件监听和处理的中心，也是greenlet调度的中心。下面看看Hub的事件处理逻辑。
+1234567891011121314151617181920212223242526272829303132333435363738394041424344454647#">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Openstack之Eventlet">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2016/02/27/openstack-eventlet2/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="Eventlet的Hub
+所有基于epoll(多路复用)的框架，总有一个事件循环处理中心，一般称为Hub。Eventlet中的Hub不仅是所有事件监听和处理的中心，也是greenlet调度的中心。下面看看Hub的事件处理逻辑。
+1234567891011121314151617181920212223242526272829303132333435363738394041424344454647#">
+<meta property="og:updated_time" content="2016-08-25T04:05:00.639Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Openstack之Eventlet">
+<meta name="twitter:description" content="Eventlet的Hub
+所有基于epoll(多路复用)的框架，总有一个事件循环处理中心，一般称为Hub。Eventlet中的Hub不仅是所有事件监听和处理的中心，也是greenlet调度的中心。下面看看Hub的事件处理逻辑。
+1234567891011121314151617181920212223242526272829303132333435363738394041424344454647#">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2016/02/27/openstack-eventlet2/"/>
+
+  <title> Openstack之Eventlet | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Openstack之Eventlet
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-02-27T00:00:00-08:00" content="2016-02-27">
+              2016-02-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/OpenStack/" itemprop="url" rel="index">
+                    <span itemprop="name">OpenStack</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/02/27/openstack-eventlet2/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/02/27/openstack-eventlet2/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Eventlet的Hub"><a href="#Eventlet的Hub" class="headerlink" title="Eventlet的Hub"></a>Eventlet的Hub</h2><hr>
+<p>所有基于<code>epoll</code>(多路复用)的框架，总有一个事件循环处理中心，一般称为<code>Hub</code>。<code>Eventlet</code>中的<code>Hub</code>不仅是所有事件监听和处理的中心，也是greenlet调度的中心。下面看看Hub的事件处理逻辑。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/hubs/hub.py</span></div><div class="line"><span class="comment"># BaseHub</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self, *a, **kw)</span>:</span></div><div class="line">        <span class="string">"""Run the runloop until abort is called.</span></div><div class="line">        """</div><div class="line">        <span class="comment"># accept and discard variable arguments because they will be</span></div><div class="line">        <span class="comment"># supplied if other greenlets have run and exited before the</span></div><div class="line">        <span class="comment"># hub's greenlet gets a chance to run</span></div><div class="line">        <span class="keyword">if</span> self.running:</div><div class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">"Already running!"</span>)</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            self.running = <span class="keyword">True</span></div><div class="line">            self.stopping = <span class="keyword">False</span></div><div class="line">            <span class="keyword">while</span> <span class="keyword">not</span> self.stopping:</div><div class="line">                <span class="comment"># 由于垃圾回收，fd可能重新使用，在重新使用的时候通过`mark_as_reopend` -&gt; `_obsolete`</span></div><div class="line">                <span class="comment"># 将原来可能存在的监听事件删除。并且将对应的监听事件回调的tb设置为IOClosed异常。</span></div><div class="line">                <span class="keyword">while</span> self.closed:</div><div class="line">                    <span class="comment"># We ditch all of these first.</span></div><div class="line">                    self.close_one()</div><div class="line">                <span class="comment"># 将timer按照到期时间排序</span></div><div class="line">                self.prepare_timers()</div><div class="line">                <span class="keyword">if</span> self.debug_blocking:</div><div class="line">                    self.block_detect_pre()</div><div class="line">                <span class="comment"># 触发定时的事件</span></div><div class="line">                self.fire_timers(self.clock())</div><div class="line">                <span class="keyword">if</span> self.debug_blocking:</div><div class="line">                    self.block_detect_post()</div><div class="line">                <span class="comment"># 将剩下的没有触发的定时事件排序，主要是为了后面找到sleep的时长</span></div><div class="line">                self.prepare_timers()</div><div class="line">                <span class="comment"># wait的时间，取最快到期的定时事件的时间戳</span></div><div class="line">                wakeup_when = self.sleep_until()</div><div class="line">                <span class="keyword">if</span> wakeup_when <span class="keyword">is</span> <span class="keyword">None</span>:</div><div class="line">                    sleep_time = self.default_sleep()</div><div class="line">                <span class="keyword">else</span>:</div><div class="line">                    sleep_time = wakeup_when - self.clock()</div><div class="line">                <span class="keyword">if</span> sleep_time &gt; <span class="number">0</span>:</div><div class="line">                    <span class="comment"># 由具体的平台决定实现(epoll）</span></div><div class="line">                    self.wait(sleep_time)</div><div class="line">                <span class="keyword">else</span>:</div><div class="line">                    self.wait(<span class="number">0</span>)</div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                self.timers_canceled = <span class="number">0</span></div><div class="line">                <span class="keyword">del</span> self.timers[:]</div><div class="line">                <span class="keyword">del</span> self.next_timers[:]</div><div class="line">        <span class="keyword">finally</span>:</div><div class="line">            self.running = <span class="keyword">False</span></div><div class="line">            self.stopping = <span class="keyword">False</span></div></pre></td></tr></table></figure>
+<h3 id="定时事件"><a href="#定时事件" class="headerlink" title="定时事件"></a>定时事件</h3><p>总体来说，Hub处理两件事件。第一类是定时事件，每次循环中处理到期的事件。上面我们可以看到，Hub每次循环将<code>next_timer</code>中的定时事件进行排序，然后处理到期的定时事件。那么定时事件是如何添加到Hub中的呢？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/hubs/hub.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseHub</span><span class="params">(object)</span>:</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">add_timer</span><span class="params">(self, timer)</span>:</span></div><div class="line">        scheduled_time = self.clock() + timer.seconds</div><div class="line">        self.next_timers.append((scheduled_time, timer))</div><div class="line">        <span class="keyword">return</span> scheduled_time</div><div class="line">        </div><div class="line"><span class="comment"># eventlet/hubs/timer.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Timer</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, seconds, cb, *args, **kw)</span>:</span></div><div class="line">        <span class="string">"""Create a timer.</span></div><div class="line">            seconds: The minimum number of seconds to wait before calling</div><div class="line">            cb: The callback to call when the timer has expired</div><div class="line">            *args: The arguments to pass to cb</div><div class="line">            **kw: The keyword arguments to pass to cb</div><div class="line"></div><div class="line">        This timer will not be run unless it is scheduled in a runloop by</div><div class="line">        calling timer.schedule() or runloop.add_timer(timer).</div><div class="line">        """</div><div class="line">        self.seconds = seconds</div><div class="line">        self.tpl = cb, args, kw</div><div class="line">        self.called = <span class="keyword">False</span></div><div class="line">        <span class="keyword">if</span> _g_debug:</div><div class="line">            self.traceback = six.StringIO()</div><div class="line">            traceback.print_stack(file=self.traceback)</div><div class="line">     <span class="comment"># 按照id的大小进行排序</span></div><div class="line">     <span class="function"><span class="keyword">def</span> <span class="title">__lt__</span><span class="params">(self, other)</span>:</span></div><div class="line">        <span class="keyword">return</span> id(self) &lt; id(other)</div></pre></td></tr></table></figure>
+<p>通过<code>add_timer</code>函数，将<code>Timer</code>的实例加入<code>next_timers</code>列表中。注意<code>Timer</code>中的时间是到期的相对时间长度，而<code>Hub</code>中记录的是绝对时间戳，因此<code>add_timer</code>做了一个转换。定时事件处理的逻辑：</p>
+<ul>
+<li>每次循环处理到期的定时事件</li>
+<li>处理的顺序按照到期的事件由小到大处理</li>
+<li>相同时间戳的事件按照添加的顺序（内存id）从小到大处理</li>
+</ul>
+<h3 id="监听事件"><a href="#监听事件" class="headerlink" title="监听事件"></a>监听事件</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/hubs/poll.py</span></div><div class="line"></div><div class="line">  <span class="function"><span class="keyword">def</span> <span class="title">wait</span><span class="params">(self, seconds=None)</span>:</span></div><div class="line">        readers = self.listeners[READ]</div><div class="line">        writers = self.listeners[WRITE]</div><div class="line">        </div><div class="line">        <span class="comment"># 如果没有监听的事件，就休眠到第一个定时事件到期</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> readers <span class="keyword">and</span> <span class="keyword">not</span> writers:</div><div class="line">            <span class="keyword">if</span> seconds:</div><div class="line">                sleep(seconds)</div><div class="line">            <span class="keyword">return</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="comment"># 进行poll， 对应python的epoll.poll和C语言的epoll_wait</span></div><div class="line">            presult = self.do_poll(seconds)</div><div class="line">        <span class="keyword">except</span> (IOError, select.error) <span class="keyword">as</span> e:</div><div class="line">            <span class="keyword">if</span> get_errno(e) == errno.EINTR:</div><div class="line">                <span class="keyword">return</span></div><div class="line">            <span class="keyword">raise</span></div><div class="line">        SYSTEM_EXCEPTIONS = self.SYSTEM_EXCEPTIONS</div><div class="line"></div><div class="line">        <span class="keyword">if</span> self.debug_blocking:</div><div class="line">            self.block_detect_pre()</div><div class="line"></div><div class="line">        <span class="comment"># Accumulate the listeners to call back to prior to</span></div><div class="line">        <span class="comment"># triggering any of them. This is to keep the set</span></div><div class="line">        <span class="comment"># of callbacks in sync with the events we've just</span></div><div class="line">        <span class="comment"># polled for. It prevents one handler from invalidating</span></div><div class="line">        <span class="comment"># another.</span></div><div class="line">        <span class="comment"># 处理满足监听条件的事件，执行对应的回调函数。</span></div><div class="line">        <span class="comment"># 如果不满足条件(例如，监听socket读事件但是当前socket不可读)，则对应的fileno，event不会在presult中</span></div><div class="line">        callbacks = set()</div><div class="line">        <span class="keyword">for</span> fileno, event <span class="keyword">in</span> presult:</div><div class="line">            <span class="keyword">if</span> event &amp; READ_MASK:</div><div class="line">                callbacks.add((readers.get(fileno, noop), fileno))</div><div class="line">            <span class="keyword">if</span> event &amp; WRITE_MASK:</div><div class="line">                callbacks.add((writers.get(fileno, noop), fileno))</div><div class="line">            <span class="keyword">if</span> event &amp; select.POLLNVAL:</div><div class="line">                self.remove_descriptor(fileno)</div><div class="line">                <span class="keyword">continue</span></div><div class="line">            <span class="keyword">if</span> event &amp; EXC_MASK:</div><div class="line">                callbacks.add((readers.get(fileno, noop), fileno))</div><div class="line">                callbacks.add((writers.get(fileno, noop), fileno))</div><div class="line">        <span class="comment"># 依次执行回调。因为epoll会按照fileno的大小排序返回，因此执行回调也是按照从小到大的顺序</span></div><div class="line">        <span class="keyword">for</span> listener, fileno <span class="keyword">in</span> callbacks:</div><div class="line">            <span class="keyword">try</span>:</div><div class="line">                listener.cb(fileno)</div><div class="line">            <span class="keyword">except</span> SYSTEM_EXCEPTIONS:</div><div class="line">                <span class="keyword">raise</span></div><div class="line">            <span class="keyword">except</span>:</div><div class="line">                self.squelch_exception(fileno, sys.exc_info())</div><div class="line">                clear_sys_exc_info()</div><div class="line"></div><div class="line">        <span class="keyword">if</span> self.debug_blocking:</div><div class="line">            self.block_detect_post()</div></pre></td></tr></table></figure>
+<p>可以看到，对第二类监听事件的处理是通过epoll，每次循环返回一批满足条件的事件，然后依次执行回调函数。那么，监听事件是如何添加到Hub中的呢？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/hubs/epoll.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Hub</span><span class="params">(poll.Hub)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, clock=time.time)</span>:</span></div><div class="line">        BaseHub.__init__(self, clock)</div><div class="line">        self.poll = epoll()</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="comment"># modify is required by select.epoll</span></div><div class="line">            self.modify = self.poll.modify</div><div class="line">        <span class="keyword">except</span> AttributeError:</div><div class="line">            self.modify = self.poll.register</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(self, evtype, fileno, cb, tb, mac)</span>:</span></div><div class="line">        oldlisteners = bool(self.listeners[READ].get(fileno) <span class="keyword">or</span></div><div class="line">                            self.listeners[WRITE].get(fileno))</div><div class="line">                            </div><div class="line">        <span class="comment"># 添加监听事件到listeners或者writers中</span></div><div class="line">        <span class="comment"># 注意这里调用的是BaseHub.add, 直接绕过了poll.py中的Hub.add</span></div><div class="line">        listener = BaseHub.add(self, evtype, fileno, cb, tb, mac)</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">if</span> <span class="keyword">not</span> oldlisteners:</div><div class="line">                <span class="comment"># Means we've added a new listener</span></div><div class="line">                self.register(fileno, new=<span class="keyword">True</span>)</div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                <span class="comment"># 注册监听的事件到 epoll上，相当于epoll_register</span></div><div class="line">                self.register(fileno, new=<span class="keyword">False</span>)</div><div class="line">        <span class="keyword">except</span> IOError <span class="keyword">as</span> ex:    <span class="comment"># ignore EEXIST, #80</span></div><div class="line">            <span class="keyword">if</span> get_errno(ex) != errno.EEXIST:</div><div class="line">                <span class="keyword">raise</span></div><div class="line">        <span class="keyword">return</span> listener</div><div class="line">        </div><div class="line">        </div><div class="line"><span class="comment"># eventlet/hubs/hub.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseHub</span><span class="params">(object)</span>:</span></div><div class="line">        </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(self, evtype, fileno, cb, tb, mark_as_closed)</span>:</span></div><div class="line">        <span class="string">""" Signals an intent to or write a particular file descriptor.</span></div><div class="line"></div><div class="line">        The *evtype* argument is either the constant READ or WRITE.</div><div class="line"></div><div class="line">        The *fileno* argument is the file number of the file of interest.</div><div class="line"></div><div class="line">        The *cb* argument is the callback which will be called when the file</div><div class="line">        is ready for reading/writing.</div><div class="line"></div><div class="line">        The *tb* argument is the throwback used to signal (into the greenlet)</div><div class="line">        that the file was closed.</div><div class="line"></div><div class="line">        The *mark_as_closed* is used in the context of the event hub to</div><div class="line">        prepare a Python object as being closed, pre-empting further</div><div class="line">        close operations from accidentally shutting down the wrong OS thread.</div><div class="line">        """</div><div class="line">        <span class="comment"># 初始化一个listener实例，这个实例保存监听的事件类型evtype、监听fd、回调函数cb，异常tb等</span></div><div class="line">        <span class="comment"># 最后将这 listener 按照类型放到 self.listeners中</span></div><div class="line">        <span class="comment"># self.listeners = &#123;'READ': &#123;1:listener1, 2:listener2&#125;, 'WRITE': &#123;3: listener3, ..&#125;&#125;</span></div><div class="line">        listener = self.lclass(evtype, fileno, cb, tb, mark_as_closed)</div><div class="line">        bucket = self.listeners[evtype]</div><div class="line">        <span class="keyword">if</span> fileno <span class="keyword">in</span> bucket:</div><div class="line">            <span class="keyword">if</span> g_prevent_multiple_readers:</div><div class="line">                <span class="keyword">raise</span> RuntimeError(</div><div class="line">                    <span class="string">"Second simultaneous %s on fileno %s "</span></div><div class="line">                    <span class="string">"detected.  Unless you really know what you're doing, "</span></div><div class="line">                    <span class="string">"make sure that only one greenthread can %s any "</span></div><div class="line">                    <span class="string">"particular socket.  Consider using a pools.Pool. "</span></div><div class="line">                    <span class="string">"If you do know what you're doing and want to disable "</span></div><div class="line">                    <span class="string">"this error, call "</span></div><div class="line">                    <span class="string">"eventlet.debug.hub_prevent_multiple_readers(False) - MY THREAD=%s; "</span></div><div class="line">                    <span class="string">"THAT THREAD=%s"</span> % (</div><div class="line">                        evtype, fileno, evtype, cb, bucket[fileno]))</div><div class="line">            <span class="comment"># store off the second listener in another structure</span></div><div class="line">            self.secondaries[evtype].setdefault(fileno, []).append(listener)</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            bucket[fileno] = listener</div><div class="line">        <span class="keyword">return</span> listener</div></pre></td></tr></table></figure>
+<p>通过继承链<code>Hub-&gt;BaseHub</code>，将监听事件添加到<code>epoll</code>中并且在每次循环中处理满足监听条件的事件，执行回调函数。我们知道，<code>greenlet</code>本身是不负责调度的，所有的调度需要由应用程序负责，那么<code>eventlet</code>如何进行程序的调度？我们先从<code>eventlet</code>定义的协程说起。</p>
+<h3 id="Eventlet的GreenThread"><a href="#Eventlet的GreenThread" class="headerlink" title="Eventlet的GreenThread"></a>Eventlet的GreenThread</h3><p>Eventlet通过继承<code>greenlet.geenlet</code>自定义了一个绿色线程，实际上是一个协程。<code>Eventlet</code>扩展了<code>greenlet.greenlet</code>的语义：</p>
+<ul>
+<li><code>wait</code>, 当被调用时会自动切换到其他协程上去，条件满足时再切回来</li>
+<li><code>link</code>, 注册协程退出时执行的清理函数</li>
+<li><code>kill</code>, 杀掉协程，但是在杀掉之前执行一次调度</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment"># eventlet/greenthread.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">GreenThread</span><span class="params">(greenlet.greenlet)</span>:</span></div><div class="line">    <span class="string">"""The GreenThread class is a type of Greenlet which has the additional</span></div><div class="line">    property of being able to retrieve the return value of the main function.</div><div class="line">    Do not construct GreenThread objects directly; call :func:`spawn` to get one.</div><div class="line">    """</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, parent)</span>:</span></div><div class="line">        greenlet.greenlet.__init__(self, self.main, parent)</div><div class="line">        self._exit_event = event.Event()</div><div class="line">        self._resolving_links = <span class="keyword">False</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">wait</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">""" Returns the result of the main function of this GreenThread.  If the</span></div><div class="line">        result is a normal return value, :meth:`wait` returns it.  If it raised</div><div class="line">        an exception, :meth:`wait` will raise the same exception (though the</div><div class="line">        stack trace will unavoidably contain some frames from within the</div><div class="line">        greenthread module)."""</div><div class="line">        <span class="keyword">return</span> self._exit_event.wait()</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">link</span><span class="params">(self, func, *curried_args, **curried_kwargs)</span>:</span></div><div class="line">        <span class="string">""" Set up a function to be called with the results of the GreenThread.</span></div><div class="line"></div><div class="line">        The function must have the following signature::</div><div class="line"></div><div class="line">            def func(gt, [curried args/kwargs]):</div><div class="line"></div><div class="line">        When the GreenThread finishes its run, it calls *func* with itself</div><div class="line">        and with the `curried arguments &lt;http://en.wikipedia.org/wiki/Currying&gt;`_ supplied</div><div class="line">        at link-time.  If the function wants to retrieve the result of the GreenThread,</div><div class="line">        it should call wait() on its first argument.</div><div class="line"></div><div class="line">        Note that *func* is called within execution context of</div><div class="line">        the GreenThread, so it is possible to interfere with other linked</div><div class="line">        functions by doing things like switching explicitly to another</div><div class="line">        greenthread.</div><div class="line">        """</div><div class="line">        self._exit_funcs = getattr(self, <span class="string">'_exit_funcs'</span>, deque())</div><div class="line">        self._exit_funcs.append((func, curried_args, curried_kwargs))</div><div class="line">        <span class="keyword">if</span> self._exit_event.ready():</div><div class="line">            self._resolve_links()</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">unlink</span><span class="params">(self, func, *curried_args, **curried_kwargs)</span>:</span></div><div class="line">        <span class="string">""" remove linked function set by :meth:`link`</span></div><div class="line"></div><div class="line">        Remove successfully return True, otherwise False</div><div class="line">        """</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> getattr(self, <span class="string">'_exit_funcs'</span>, <span class="keyword">None</span>):</div><div class="line">            <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            self._exit_funcs.remove((func, curried_args, curried_kwargs))</div><div class="line">            <span class="keyword">return</span> <span class="keyword">True</span></div><div class="line">        <span class="keyword">except</span> ValueError:</div><div class="line">            <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(self, function, args, kwargs)</span>:</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            result = function(*args, **kwargs)</div><div class="line">        <span class="keyword">except</span>:</div><div class="line">            self._exit_event.send_exception(*sys.exc_info())</div><div class="line">            self._resolve_links()</div><div class="line">            <span class="keyword">raise</span></div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            self._exit_event.send(result)</div><div class="line">            self._resolve_links()</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_resolve_links</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="comment"># ca and ckw are the curried function arguments</span></div><div class="line">        <span class="keyword">if</span> self._resolving_links:</div><div class="line">            <span class="keyword">return</span></div><div class="line">        self._resolving_links = <span class="keyword">True</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            exit_funcs = getattr(self, <span class="string">'_exit_funcs'</span>, deque())</div><div class="line">            <span class="keyword">while</span> exit_funcs:</div><div class="line">                f, ca, ckw = exit_funcs.popleft()</div><div class="line">                f(self, *ca, **ckw)</div><div class="line">        <span class="keyword">finally</span>:</div><div class="line">            self._resolving_links = <span class="keyword">False</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">kill</span><span class="params">(self, *throw_args)</span>:</span></div><div class="line">        <span class="string">"""Kills the greenthread using :func:`kill`.  After being killed</span></div><div class="line">        all calls to :meth:`wait` will raise *throw_args* (which default</div><div class="line">        to :class:`greenlet.GreenletExit`)."""</div><div class="line">        <span class="keyword">return</span> kill(self, *throw_args)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">cancel</span><span class="params">(self, *throw_args)</span>:</span></div><div class="line">        <span class="string">"""Kills the greenthread using :func:`kill`, but only if it hasn't</span></div><div class="line">        already started running.  After being canceled,</div><div class="line">        all calls to :meth:`wait` will raise *throw_args* (which default</div><div class="line">        to :class:`greenlet.GreenletExit`)."""</div><div class="line">        <span class="keyword">return</span> cancel(self, *throw_args)</div></pre></td></tr></table></figure>
+<h3 id="使用协程的入口spawn和spawn-n"><a href="#使用协程的入口spawn和spawn-n" class="headerlink" title="使用协程的入口spawn和spawn_n"></a>使用协程的入口<code>spawn</code>和<code>spawn_n</code></h3><p>一般使用<code>eventlet</code>会有两个入口函数：</p>
+<ul>
+<li><code>spawn</code>, eventlet.spawn -&gt;eventlet.greenthread.spawn, 创建一个绿色线程并且返回这个绿色协程，并安排调度执行。</li>
+<li><code>spawn_n</code>, eventlet.spawn_n -&gt;eventlet.greenthread.spawn_n, 创建一个greenlet，并返回，同时安排调度执行。</li>
+</ul>
+<p><code>spawn</code>使用了自己的<code>GreenThread</code>，而<code>spawn_n</code>使用的是<code>greenlet</code>，因而后者更加快速一点。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/greenthread.py</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">spawn</span><span class="params">(func, *args, **kwargs)</span>:</span></div><div class="line">    <span class="string">"""Create a greenthread to run ``func(*args, **kwargs)``.  Returns a</span></div><div class="line">    :class:`GreenThread` object which you can use to get the results of the</div><div class="line">    call.</div><div class="line"></div><div class="line">    Execution control returns immediately to the caller; the created greenthread</div><div class="line">    is merely scheduled to be run at the next available opportunity.</div><div class="line">    Use :func:`spawn_after` to  arrange for greenthreads to be spawned</div><div class="line">    after a finite delay.</div><div class="line">    """</div><div class="line">    hub = hubs.get_hub()</div><div class="line">    g = GreenThread(hub.greenlet)</div><div class="line">    hub.schedule_call_global(<span class="number">0</span>, g.switch, func, args, kwargs)</div><div class="line">    <span class="keyword">return</span> g</div><div class="line"></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">spawn_n</span><span class="params">(func, *args, **kwargs)</span>:</span></div><div class="line">    <span class="string">"""Same as :func:`spawn`, but returns a ``greenlet`` object from</span></div><div class="line">    which it is not possible to retrieve either a return value or</div><div class="line">    whether it raised any exceptions.  This is faster than</div><div class="line">    :func:`spawn`; it is fastest if there are no keyword arguments.</div><div class="line"></div><div class="line">    If an exception is raised in the function, spawn_n prints a stack</div><div class="line">    trace; the print can be disabled by calling</div><div class="line">    :func:`eventlet.debug.hub_exceptions` with False.</div><div class="line">    """</div><div class="line">    <span class="keyword">return</span> _spawn_n(<span class="number">0</span>, func, args, kwargs)[<span class="number">1</span>]</div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_spawn_n</span><span class="params">(seconds, func, args, kwargs)</span>:</span></div><div class="line">    hub = hubs.get_hub()</div><div class="line">    g = greenlet.greenlet(func, parent=hub.greenlet)</div><div class="line">    t = hub.schedule_call_global(seconds, g.switch, *args, **kwargs)</div><div class="line">    <span class="keyword">return</span> t, g</div></pre></td></tr></table></figure>
+<p>可以看到两个都调用了<code>schedule_call_global</code>然后返回。这个函数会安排绿色协程的调度。</p>
+<h3 id="绿色线程如何调度"><a href="#绿色线程如何调度" class="headerlink" title="绿色线程如何调度"></a>绿色线程如何调度</h3><p>在创建GreenThread时，会通过调用不同的<code>Hub</code>方法进行调度，在linux环境下两个函数一样，就以上面说到的<code>schedule_call_global</code>为例说明。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/hubs/poll.py</span></div><div class="line"><span class="comment"># BaseHub</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">schedule_call_global</span><span class="params">(self, seconds, cb, *args, **kw)</span>:</span></div><div class="line">        <span class="string">"""Schedule a callable to be called after 'seconds' seconds have</span></div><div class="line">        elapsed. The timer will NOT be canceled if the current greenlet has</div><div class="line">        exited before the timer fires.</div><div class="line">            seconds: The number of seconds to wait.</div><div class="line">            cb: The callable to call after the given time.</div><div class="line">            *args: Arguments to pass to the callable when called.</div><div class="line">            **kw: Keyword arguments to pass to the callable when called.</div><div class="line">        """</div><div class="line">        t = timer.Timer(seconds, cb, *args, **kw)</div><div class="line">        self.add_timer(t)</div><div class="line">        <span class="keyword">return</span> t</div></pre></td></tr></table></figure>
+<p>可以看到，当创建绿色线程时通过调用<code>scheduler_call_global</code>方法，然后再设置定时任务的方式添加入Hub进行调度。每个<code>seconds=0</code>，即在每次循环处理定时任务的时候处理。一直到这里，并没有谈到监听事件是何时注册到<code>epoll</code>进行监听的。我们通过<code>socket</code>创建和监听为例，看一下整个过程是如何的。</p>
+<h3 id="socket如何创建、设置、注册和监听"><a href="#socket如何创建、设置、注册和监听" class="headerlink" title="socket如何创建、设置、注册和监听"></a>socket如何创建、设置、注册和监听</h3><p>原生的实现不兼容<code>eventlet</code>，所以<code>eventlet</code>对一些标准库进行了<code>绿化</code>。用自己的实现替代了原生的实现。这里的不兼容主要体现在两点：</p>
+<ul>
+<li>需要将堵塞模式设置为非堵塞，不然多路复用没有意义</li>
+<li>需要将fd添加到epoll中进行监听，并且在满足条件下调度执行</li>
+</ul>
+<p>通过GreenSocket实现探查下如何解决上面两个问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">eventlet.green.socket -&gt; eventlet._socket_nodns -&gt; eventlet.greenio.base -&gt;GreenSocket。</div></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment"># eventlet/greenio/base.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">GreenSocket</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Green version of socket.socket class, that is intended to be 100%</div><div class="line">    API-compatible.</div><div class="line"></div><div class="line">    It also recognizes the keyword parameter, 'set_nonblocking=True'.</div><div class="line">    Pass False to indicate that socket is already in non-blocking mode</div><div class="line">    to save syscalls.</div><div class="line">    """</div><div class="line"></div><div class="line">    <span class="comment"># This placeholder is to prevent __getattr__ from creating an infinite call loop</span></div><div class="line">    fd = <span class="keyword">None</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, family_or_realsock=socket.AF_INET, *args, **kwargs)</span>:</span></div><div class="line">        should_set_nonblocking = kwargs.pop(<span class="string">'set_nonblocking'</span>, <span class="keyword">True</span>)</div><div class="line">        <span class="keyword">if</span> isinstance(family_or_realsock, six.integer_types):</div><div class="line">            <span class="comment"># 创建原生的socket 或者包装已有的socket</span></div><div class="line">            fd = _original_socket(family_or_realsock, *args, **kwargs)</div><div class="line">            <span class="comment"># Notify the hub that this is a newly-opened socket.</span></div><div class="line">            <span class="comment"># 这是个新打开的fd，如果之前有监听的事件删除之</span></div><div class="line">            notify_opened(fd.fileno())</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            fd = family_or_realsock</div><div class="line"></div><div class="line">        <span class="comment"># import timeout from other socket, if it was there</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            self._timeout = fd.gettimeout() <span class="keyword">or</span> socket.getdefaulttimeout()</div><div class="line">        <span class="keyword">except</span> AttributeError:</div><div class="line">            self._timeout = socket.getdefaulttimeout()</div><div class="line">        <span class="comment"># 设置为非堵塞模式，需要注意set_nonblocking这个参数的意思是 传入的socket已经是非堵塞的了，不需要额外的设置。</span></div><div class="line">        <span class="keyword">if</span> should_set_nonblocking:</div><div class="line">            set_nonblocking(fd)</div><div class="line">        self.fd = fd</div><div class="line">        <span class="comment"># when client calls setblocking(0) or settimeout(0) the socket must</span></div><div class="line">        <span class="comment"># act non-blocking</span></div><div class="line">        self.act_non_blocking = <span class="keyword">False</span></div><div class="line"></div><div class="line">        <span class="comment"># Copy some attributes from underlying real socket.</span></div><div class="line">        <span class="comment"># This is the easiest way that i found to fix</span></div><div class="line">        <span class="comment"># https://bitbucket.org/eventlet/eventlet/issue/136</span></div><div class="line">        <span class="comment"># Only `getsockopt` is required to fix that issue, others</span></div><div class="line">        <span class="comment"># are just premature optimization to save __getattr__ call.</span></div><div class="line">        self.bind = fd.bind</div><div class="line">        self.close = fd.close</div><div class="line">        self.fileno = fd.fileno</div><div class="line">        self.getsockname = fd.getsockname</div><div class="line">        self.getsockopt = fd.getsockopt</div><div class="line">        self.listen = fd.listen</div><div class="line">        self.setsockopt = fd.setsockopt</div><div class="line">        self.shutdown = fd.shutdown</div><div class="line">        self._closed = <span class="keyword">False</span></div><div class="line">        </div><div class="line">        </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_trampoline</span><span class="params">(self, fd, read=False, write=False, timeout=None, timeout_exc=None)</span>:</span></div><div class="line">        <span class="string">""" We need to trampoline via the event hub.</span></div><div class="line">            We catch any signal back from the hub indicating that the operation we</div><div class="line">            were waiting on was associated with a filehandle that's since been</div><div class="line">            invalidated.</div><div class="line">        """</div><div class="line">        <span class="comment"># 处理已经closed的情况</span></div><div class="line">        <span class="keyword">if</span> self._closed:</div><div class="line">            <span class="comment"># If we did any logging, alerting to a second trampoline attempt on a closed</span></div><div class="line">            <span class="comment"># socket here would be useful.</span></div><div class="line">            <span class="keyword">raise</span> IOClosed()</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">return</span> trampoline(fd, read=read, write=write, timeout=timeout,</div><div class="line">                              timeout_exc=timeout_exc,</div><div class="line">                              mark_as_closed=self._mark_as_closed)</div><div class="line">        <span class="keyword">except</span> IOClosed:</div><div class="line">            <span class="comment"># This socket's been obsoleted. De-fang it.</span></div><div class="line">            self._mark_as_closed()</div><div class="line">            <span class="keyword">raise</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">accept</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="keyword">if</span> self.act_non_blocking:</div><div class="line">            <span class="keyword">return</span> self.fd.accept()</div><div class="line">        fd = self.fd</div><div class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">            <span class="comment"># 非堵塞的读取，如果返回errno.EWOULDBLOCK异常，返回None</span></div><div class="line">            res = socket_accept(fd)</div><div class="line">             </div><div class="line">            <span class="comment"># 返回正常可读，设置client为非堵塞，然后绿化之</span></div><div class="line">            <span class="keyword">if</span> res <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">                client, addr = res</div><div class="line">                set_nonblocking(client)</div><div class="line">                <span class="keyword">return</span> type(self)(client), addr</div><div class="line">            <span class="comment"># 对方可能堵塞了，先垫一下(trampoline弹簧垫的意思）</span></div><div class="line">            self._trampoline(fd, read=<span class="keyword">True</span>, timeout=self.gettimeout(),</div><div class="line">                             timeout_exc=socket.timeout(<span class="string">"timed out"</span>))</div><div class="line">                             </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">socket_accept</span><span class="params">(descriptor)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Attempts to accept() on the descriptor, returns a client,address tuple</div><div class="line">    if it succeeds; returns None if it needs to trampoline, and raises</div><div class="line">    any exceptions.</div><div class="line">    """</div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">return</span> descriptor.accept()</div><div class="line">    <span class="keyword">except</span> socket.error <span class="keyword">as</span> e:</div><div class="line">        <span class="keyword">if</span> get_errno(e) == errno.EWOULDBLOCK:</div><div class="line">            <span class="keyword">return</span> <span class="keyword">None</span></div><div class="line">        <span class="keyword">raise</span></div><div class="line">        </div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">trampoline</span><span class="params">(fd, read=None, write=None, timeout=None,</span></span></div><div class="line">               timeout_exc=timeout.Timeout,</div><div class="line">               mark_as_closed=None):</div><div class="line">    <span class="string">"""Suspend the current coroutine until the given socket object or file</span></div><div class="line">    descriptor is ready to *read*, ready to *write*, or the specified</div><div class="line">    *timeout* elapses, depending on arguments specified.</div><div class="line"></div><div class="line">    To wait for *fd* to be ready to read, pass *read* ``=True``; ready to</div><div class="line">    write, pass *write* ``=True``. To specify a timeout, pass the *timeout*</div><div class="line">    argument in seconds.</div><div class="line"></div><div class="line">    If the specified *timeout* elapses before the socket is ready to read or</div><div class="line">    write, *timeout_exc* will be raised instead of ``trampoline()``</div><div class="line">    returning normally.</div><div class="line"></div><div class="line">    .. note :: |internal|</div><div class="line">    """</div><div class="line">    t = <span class="keyword">None</span></div><div class="line">    hub = get_hub()</div><div class="line">    current = greenlet.getcurrent()</div><div class="line">    <span class="keyword">assert</span> hub.greenlet <span class="keyword">is</span> <span class="keyword">not</span> current, <span class="string">'do not call blocking functions from the mainloop'</span></div><div class="line">    <span class="keyword">assert</span> <span class="keyword">not</span> (</div><div class="line">        read <span class="keyword">and</span> write), <span class="string">'not allowed to trampoline for reading and writing'</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        fileno = fd.fileno()</div><div class="line">    <span class="keyword">except</span> AttributeError:</div><div class="line">        fileno = fd</div><div class="line">        </div><div class="line">    <span class="comment"># 如果设置了超时时间，定义一个超时的定时事件，从而greenlet.throw产生超时异常</span></div><div class="line">    <span class="keyword">if</span> timeout <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">        <span class="function"><span class="keyword">def</span> <span class="title">_timeout</span><span class="params">(exc)</span>:</span></div><div class="line">            <span class="comment"># This is only useful to insert debugging</span></div><div class="line">            current.throw(exc)</div><div class="line">        t = hub.schedule_call_global(timeout, _timeout, timeout_exc)</div><div class="line">    <span class="comment"># 根据读写任务类型，添加到Hub中进行监听。回调函数是current.switch。即如果某个绿色线程监听的事件满足条件</span></div><div class="line">    <span class="comment"># 就在每个Hub循环中通过current.switch切回本绿色线程继续处理，直到处理完毕或者绿色线程主动让出处理</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">if</span> read:</div><div class="line">            listener = hub.add(hub.READ, fileno, current.switch, current.throw, mark_as_closed)</div><div class="line">        <span class="keyword">elif</span> write:</div><div class="line">            listener = hub.add(hub.WRITE, fileno, current.switch, current.throw, mark_as_closed)</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="comment"># 已经注册了监听事件，切回Hub中的绿色线程处理</span></div><div class="line">            <span class="keyword">return</span> hub.switch()</div><div class="line">        <span class="keyword">finally</span>:</div><div class="line">            <span class="comment"># finally能够运行，说明监听条件满足了，从监听中移除该事件。</span></div><div class="line">            hub.remove(listener)</div><div class="line">    <span class="keyword">finally</span>:</div><div class="line">        <span class="keyword">if</span> t <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">            t.cancel()</div></pre></td></tr></table></figure>
+<p>从上面的代码可以看到，使用了绿色线程的执行步骤是： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">开始 -&gt;初始化原生socket -&gt;设置为非堵塞模式 -&gt; accept -&gt;返回堵塞异常 -&gt;trampline将socket添加到Hub进行监听 -&gt;切回Hub线程运行  </div><div class="line">-&gt;每次的Hub循环 -&gt;epoll条件满足执行current.switch切回本线程 -&gt; 进行accept操作正常 -&gt; 绿化返回的client端socket -&gt;结束</div></pre></td></tr></table></figure>
+<p>因此，我们可以知道<code>eventlet</code>解决上面两个问题的方法：</p>
+<ul>
+<li>封装原生socket，设置为非堵塞模式</li>
+<li>在accept返回失败时，通过trampoline将其添加到Hub进行事件监听。</li>
+</ul>
+<h3 id="eventlet的绿化逻辑"><a href="#eventlet的绿化逻辑" class="headerlink" title="eventlet的绿化逻辑"></a>eventlet的绿化逻辑</h3><p>可以归纳出<code>eventlet</code>的大致处理逻辑：</p>
+<ol>
+<li>调用spawn类函数创建一个绿色线程，通过Timer提交给Hub，并将switch函数设置为回调。在每次Hub循环处理Timer时，执行switch切回绿色线程运行；</li>
+<li>通过绿化原生标准库，设置fd为非堵塞模式；在运行非堵塞accept、read、write等失败时trampoline，从而添加到hub中进行事件监听。等待下次Hub循环时通过epoll检查条件是否满足，然后再切换回绿色线程进行对应的操作。</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2015/12/14/openstack-eventlet/" rel="next" title="Evenlet的基础greenlet">
+                <i class="fa fa-chevron-left"></i> Evenlet的基础greenlet
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2016/07/29/pythonlib-requests1/" rel="prev" title="requests库源码剖析">
+                requests库源码剖析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/02/27/openstack-eventlet2/"
+           data-title="Openstack之Eventlet" data-url="http://fanchao01.github.io/blog/blog/2016/02/27/openstack-eventlet2/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Eventlet的Hub"><span class="nav-number">1.</span> <span class="nav-text">Eventlet的Hub</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定时事件"><span class="nav-number">1.1.</span> <span class="nav-text">定时事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#监听事件"><span class="nav-number">1.2.</span> <span class="nav-text">监听事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Eventlet的GreenThread"><span class="nav-number">1.3.</span> <span class="nav-text">Eventlet的GreenThread</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用协程的入口spawn和spawn-n"><span class="nav-number">1.4.</span> <span class="nav-text">使用协程的入口spawn和spawn_n</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#绿色线程如何调度"><span class="nav-number">1.5.</span> <span class="nav-text">绿色线程如何调度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#socket如何创建、设置、注册和监听"><span class="nav-number">1.6.</span> <span class="nav-text">socket如何创建、设置、注册和监听</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#eventlet的绿化逻辑"><span class="nav-number">1.7.</span> <span class="nav-text">eventlet的绿化逻辑</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

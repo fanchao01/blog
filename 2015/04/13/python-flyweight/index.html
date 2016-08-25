@@ -1,0 +1,694 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="这篇文章主要翻译自Design Pattern and Python Flyweight Pattern，稍微加上我自己的一点理解。
+享元模式
+《设计模式》中的享元是一种共享对象，能够在不同的上下文环境中同时使用，并且独立于上下文。因此，只有(隐式地)共享状态保存在享元对象本身中；而(显式地）上下文独立的状态被分别保存，在需要时传递给享元对象。本文中只讨论享元对象的创建机制以及对隐式共享状态的管理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python中的享元模式(flyweight)">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2015/04/13/python-flyweight/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="这篇文章主要翻译自Design Pattern and Python Flyweight Pattern，稍微加上我自己的一点理解。
+享元模式
+《设计模式》中的享元是一种共享对象，能够在不同的上下文环境中同时使用，并且独立于上下文。因此，只有(隐式地)共享状态保存在享元对象本身中；而(显式地）上下文独立的状态被分别保存，在需要时传递给享元对象。本文中只讨论享元对象的创建机制以及对隐式共享状态的管理">
+<meta property="og:updated_time" content="2016-08-25T03:48:07.559Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python中的享元模式(flyweight)">
+<meta name="twitter:description" content="这篇文章主要翻译自Design Pattern and Python Flyweight Pattern，稍微加上我自己的一点理解。
+享元模式
+《设计模式》中的享元是一种共享对象，能够在不同的上下文环境中同时使用，并且独立于上下文。因此，只有(隐式地)共享状态保存在享元对象本身中；而(显式地）上下文独立的状态被分别保存，在需要时传递给享元对象。本文中只讨论享元对象的创建机制以及对隐式共享状态的管理">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2015/04/13/python-flyweight/"/>
+
+  <title> python中的享元模式(flyweight) | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                python中的享元模式(flyweight)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-04-13T00:00:00-07:00" content="2015-04-13">
+              2015-04-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/design-pattern/" itemprop="url" rel="index">
+                    <span itemprop="name">design-pattern</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/design-pattern/英文翻译/" itemprop="url" rel="index">
+                    <span itemprop="name">英文翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/04/13/python-flyweight/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/04/13/python-flyweight/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>这篇文章主要翻译自<a href="http://yloiseau.net/articles/DesignPatterns/flyweight/" target="_blank" rel="external">Design Pattern and Python Flyweight Pattern</a>，稍微加上我自己的一点理解。</p>
+<h2 id="享元模式"><a href="#享元模式" class="headerlink" title="享元模式"></a>享元模式</h2><hr>
+<p>《设计模式》中的<code>享元</code>是一种共享对象，能够在不同的上下文环境中同时使用，并且独立于上下文。因此，只有(隐式地)共享状态保存在享元对象本身中；而(显式地）上下文独立的状态被分别保存，在需要时传递给享元对象。本文中只讨论享元对象的创建机制以及对隐式共享状态的管理。享元模式常用在需要降低内存使用量的场景中。这种应用场景需要大量同一个对象的实例，并且这些实例拥有同样的隐式状态，而显式状态可以通过计算拿到或者存储代价比较低。</p>
+<h3 id="1-严格的《设计模式》中的享元模式"><a href="#1-严格的《设计模式》中的享元模式" class="headerlink" title="1. 严格的《设计模式》中的享元模式"></a>1. 严格的《设计模式》中的享元模式</h3><p>严格的《设计模式》中的享元模式没有使用python中许多漂亮的特性。下面这个实现展示在一个静态地、强类型地语言中如何实现享元模式。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">		self.a, self.b = a, b</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SpamFactory</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__instances = &#123;&#125;</div><div class="line">  </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_instance</span><span class="params">(self, a, b)</span>:</span></div><div class="line">        key = (a, b)</div><div class="line">        <span class="keyword">if</span> key <span class="keyword">not</span> <span class="keyword">in</span> self.__instances:</div><div class="line">            self.__instance[key] = Spam(a, b)</div><div class="line">        <span class="keyword">return</span> self.__instance[key]</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(self)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line"> 		self.x, self.y = x, y</div><div class="line">    </div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">EggFactory</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__instances = &#123;&#125;</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_instance</span><span class="params">(self, x, y)</span>:</span></div><div class="line">		key = (x, y)</div><div class="line">		<span class="keyword">if</span> key <span class="keyword">not</span> <span class="keyword">in</span> self.__instances:</div><div class="line">			self.__instances[key] = Egg(x, y)</div><div class="line">        <span class="keyword">return</span> self.__instances[key]</div><div class="line"></div><div class="line"><span class="comment">#----------------------------</span></div><div class="line"></div><div class="line">spam_factory = SpamFactory()</div><div class="line">egg_factory = EggFactory()</div><div class="line"></div><div class="line"><span class="keyword">assert</span> spam_factory.get_instance(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> spam_factory.get_instance(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> egg_factory.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> egg_factory.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"><span class="keyword">assert</span> spam_factory.get_instance(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> egg_factory.get_instance(<span class="number">1</span>, <span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p>但是python是一种动态类型语言，类也能作为<code>第一类对象</code>。通过使用<code>*args</code>替代固定的初始化参数，并将享元类也传递给工厂类作为初始化参数，工厂类能够更加通用化。下面就是一个这样的例子。</p>
+<h3 id="2-《设计模式》中的享元模式"><a href="#2-《设计模式》中的享元模式" class="headerlink" title="2. 《设计模式》中的享元模式"></a>2. 《设计模式》中的享元模式</h3><p>这个例子稍微pythonic一点，使用了<code>*args</code>并且将类作为参数进行传递。因此不需要为每个工厂实现单独的类。简单来说实现了一个通用工厂，这个工厂需要传递进享元类本身，产生享元类对应的实例。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">FlyweightFactory</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, cls)</span>:</span></div><div class="line">		self._cls = cls</div><div class="line"> 		self.__instances = &#123;&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">get_instance</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		key = (args, tuple(kwargs.items()))</div><div class="line">		<span class="keyword">return</span> self.__instances.setdefault(key, self._cls(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="comment">#--------------------------------------</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">		self.a, self.b = a, b</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line"> 		self.x, self.y = x, y</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line">SpamFactory = FlyweightFactory(Spam)</div><div class="line">EggFactory = FlyweightFactory(Egg)</div><div class="line">SubSpamFactory = FlyweightFactory(SubSpam)</div><div class="line"></div><div class="line"><span class="keyword">assert</span> SpamFactory.get_instance(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> SpamFactory.get_instance(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> EggFactory.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> EggFactory.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpamFactory.get_instance(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> SpamFactory.get_instance(<span class="number">1</span>, <span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p>通过python的语法，使工厂类更加通用化。需要注意<code>SubSpamFactory</code>与<code>SpamFactory</code>是两个不同的类工厂，产生的实例是不同的(即使传递相同的参数，SubSpamFactory产生的实例是SubSpam的实例，是Spam的子实例)。</p>
+<h3 id="3-类装饰器版本"><a href="#3-类装饰器版本" class="headerlink" title="3. 类装饰器版本"></a>3. 类装饰器版本</h3><p>通过使用<code>__call__</code>魔术方法，可以不用显式地调用<code>get_instance</code>方法。直接通过<code>SpamFactory(1,2)</code>就能得到实例。<br>通过<code>SpamFactory(1,2)</code>得调用方式得到实例与通过<code>Spam(1,2)</code>得方式在形式上是一样的。例如，可以通过<code>Spam=SpamFactory(Spam)</code>的方式实现。相当于将<code>SpamFactory</code>又取了个<code>Spam</code>的名字，或者说将名字<code>Spam</code>重新绑定到<code>SpamFactory</code>类上。这实际上就是<code>装饰器</code>的功能。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Flyweight</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, cls)</span>:</span></div><div class="line">		self._cls = cls</div><div class="line">		self.__instances = &#123;&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		key = (args, tuple(kwargs.items()))</div><div class="line">		<span class="keyword">return</span> self.__instances.setdefault(key, self._cls(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="meta">@Flyweight</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">		self.a, self.b = a, b</div><div class="line"></div><div class="line"><span class="meta">@Flyweight</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line"> 		self.x, self.y = x, y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"></div><div class="line"><span class="meta">@Flyweight</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam._cls)</span>:</span>	<span class="comment"># 不能使用Spam</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> SubSpam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p>python的装饰器是高阶函数，以可调用对象为参数产生另外一个可调用对象。<code>@Flyweight</code>等同于上一个例子中的<code>Spam = SpamFactory(Spam)</code>。注意子类<code>SumSpam</code>的实现。</p>
+<h3 id="4-函数装饰器版本"><a href="#4-函数装饰器版本" class="headerlink" title="4. 函数装饰器版本"></a>4. 函数装饰器版本</h3><p>通过对类<code>Flyweight</code>实现<code>__call__</code>方法把该类伪装成了一个函数。直接使用函数实现装饰器更加方便。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">flyweight</span><span class="params">(cls)</span>:</span></div><div class="line">	instances = &#123;&#125;</div><div class="line">	<span class="keyword">return</span> <span class="keyword">lambda</span> *args, **kwargs: instances.setdefault(</div><div class="line">		(args, tuple(kwarges.items())), </div><div class="line">        cls(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="comment"># 或者不使用lambda</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">flyweight</span><span class="params">(cls)</span>:</span></div><div class="line">	instances = &#123;&#125;</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">_wrap</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">		key = (args, tuple(kwargs.items()))</div><div class="line">		<span class="keyword">return</span> instances.setdefault(key, cls(*args, **kwargs))</div><div class="line">	<span class="keyword">return</span> _wrap</div></pre></td></tr></table></figure>
+<h3 id="5-《设计模式》中的MixIn"><a href="#5-《设计模式》中的MixIn" class="headerlink" title="5. 《设计模式》中的MixIn"></a>5. 《设计模式》中的MixIn</h3><p>目前为止，我们有一个代理方法(工厂函数)，用来创建一个函数或者类。而这个函数或者类封装了享元类，缓存实例并且代理享元类进行实例化。工厂函数可以通过实现类方法的方式进行实例化的代理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">FlyweightMixin</span><span class="params">(object)</span>:</span></div><div class="line">	_instances = &#123;&#125;</div><div class="line"></div><div class="line"><span class="meta">	@classmeothd</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">get_instance</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> cls._instance.setdefault(</div><div class="line">			(args, tuple(kwargs.items())),</div><div class="line">			cls(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(FLyweightMixin)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">		self.a, self.b = a, b</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(FLyweightMixin)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line">		self.x, self.y = x, y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam.get_instance(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam.get_instance(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam.get(<span class="string">'x'</span>, <span class="string">'y'</span>) <span class="keyword">is</span> SubSpam.get_instance(<span class="string">'x'</span>, <span class="string">'y'</span>)</div><div class="line"><span class="keyword">assert</span> SubSpam.get(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> <span class="keyword">not</span> Spam.get_instance(<span class="string">'a'</span>, <span class="string">'b'</span>)</div></pre></td></tr></table></figure>
+<p>Mixin是一种接口类，类似Java的Interface一般是作为接口存在而自己不实例化为单独的实例。</p>
+<h3 id="6-Minxin版本"><a href="#6-Minxin版本" class="headerlink" title="6. Minxin版本"></a>6. Minxin版本</h3><p>上一版本不太<code>安全</code>，没有办法阻止用户绕过Flyweight直接实例化享元类。（python的类实现是不完备的，很少有绝对的方法阻止用户去做一些事情。而且，python拥有完全的反射机制，用户几乎可以透过界面做任何事情。）<br>通过将<code>get_instance</code>方法移动到<code>__new__</code>方法中去，我们能（一定程度上）阻止用户直接实例化享元类。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 所有实例都缓存在FlyweightMixin中</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">FlyweightMixin</span><span class="params">(object)</span>:</span></div><div class="line">	_instances = &#123;&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">raise</span> NotImplementedException</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> cls._instances.setdefault(</div><div class="line">				<span class="comment"># 需要cls作为键值的一部分</span></div><div class="line">				(cls, args, tuple(kwargs.items())),</div><div class="line">				<span class="comment"># 通过super和type调用享元类进行实例化</span></div><div class="line">				super(type(cls), cls).__new__(cls, *args, **kwargs))</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(FlyweightMixin)</span>:</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">        self.a = a</div><div class="line">        self.b = b</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(FlyweightMixin)</span>:</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line">        self.x = x</div><div class="line">        self.y = y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> Egg(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="comment"># Subclassing a flyweight class</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">    <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p>这个版本的改动比较大，需要理解python中的<code>__new__</code>魔术方法。另外，作为字典<code>_instances</code>的键值需要增加<code>cls</code>，因为这种方式将所有享元类的实例全部保存在了相同的字典中。而之前的每个享元类的实例是保存在独立的空间中的。</p>
+<h3 id="7-改进的装饰器版本"><a href="#7-改进的装饰器版本" class="headerlink" title="7. 改进的装饰器版本"></a>7. 改进的装饰器版本</h3><p>除了继承，类属性可以动态的添加到享元类上。python是一种动态类型，类本身能够在运行时修改。这种方法更加灵活、限制更少、更加优雅，而且能够应用到第三方类上。（不过，更加难懂）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">@classmethod</div><div class="line">def get_instance(cls, *args, **kwargs):</div><div class="line">	return cls._instances.setdefault(</div><div class="line">			(cls, args, tuple(kwargs.items())),</div><div class="line">			super(type(cls), cls).__new__(*args, **kwargs)</div><div class="line"></div><div class="line">def flyweight(decoree):</div><div class="line">	decoree._instances = &#123;&#125;</div><div class="line">	# 将get_instance 修改为 享元类进行实例化时调用的函数__new__</div><div class="line">	# python中 __new__是真正的构建函数，决定实例的模板和内存结构</div><div class="line">	# 而 __init__更像初始化函数，用来给实例变量赋予初值</div><div class="line">	decoree.__new__ = get_instance</div><div class="line">	return decoree</div><div class="line"></div><div class="line">#---------------------------</div><div class="line">@flyweight</div><div class="line">class Spam(object):</div><div class="line">    def __init__(self, a, b):</div><div class="line">        self.a = a</div><div class="line">        self.b = b</div><div class="line"></div><div class="line"></div><div class="line">@flyweight</div><div class="line">class Egg(object):</div><div class="line">    def __init__(self, x, y):</div><div class="line">        self.x = x</div><div class="line">        self.y = y</div><div class="line"></div><div class="line"></div><div class="line">assert Spam(1, 2) is Spam(1, 2)</div><div class="line">assert Egg(&apos;a&apos;, &apos;b&apos;) is Egg(&apos;a&apos;, &apos;b&apos;)</div><div class="line">assert Spam(1, 2) is not Egg(1, 2)</div><div class="line"></div><div class="line"># Subclassing a flyweight class</div><div class="line">class SubSpam(Spam):</div><div class="line">    pass</div><div class="line"></div><div class="line">assert SubSpam(1,2) is SubSpam(1,2)</div><div class="line">assert Spam(1,2) is not SubSpam(1,2)</div></pre></td></tr></table></figure>
+<h3 id="8-超类版本"><a href="#8-超类版本" class="headerlink" title="8. 超类版本"></a>8. 超类版本</h3><p>上一个版本实际上起到了超类的作用，通过修改享元类的构建函数<code>__new__</code>决定创建新的实例，还是使用已经缓存的实例。直接通过超类的语法当然也能实现。(这种方式非常复杂，而且不易阅读和维护，不建议这样使用超类，甚至不建议使用超类语法本身）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MetaFlyweight</span><span class="params">(type)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		<span class="comment"># 初始化类本身，类作为超类的实例进行初始化，可以忽略</span></div><div class="line">		type.__init__(cls, *args, **kwargs)</div><div class="line">		cls._instances = &#123;&#125;</div><div class="line">		<span class="comment"># 修改类的构建函数</span></div><div class="line">		cls.__new__ = cls._get_instance</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">_get_instance</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> cls._instances.setdefault(</div><div class="line">			(args, tuple(kwargs.items())),</div><div class="line">			<span class="comment"># 调用 享元类 本身去实例化</span></div><div class="line">			super(cls, cls).__new__(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = MetaFlyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">        self.a = a</div><div class="line">        self.b = b</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = MetaFlyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line">        self.x = x</div><div class="line">        self.y = y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> Egg(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="comment"># Subclassing a flyweight class</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">    <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div></pre></td></tr></table></figure>
+<h3 id="9-函数式超类"><a href="#9-函数式超类" class="headerlink" title="9. 函数式超类"></a>9. 函数式超类</h3><p>对于python，所有的方法、属性都可以动态的添加。可以通过函数式的方式进行操作。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@classmethod</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_get_instance</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">	<span class="keyword">return</span> cls.__instances.setdefault(</div><div class="line">		(args, tuple(kwargs.items())),</div><div class="line">		super(type(cls), cls).__new__(*args, **kwargs))</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">metaflyweight</span><span class="params">(name, parents, attrs)</span>:</span></div><div class="line">	<span class="comment"># 通过实例化type，动态构建享元类本身</span></div><div class="line">	cls = type(name, parents, attrs)</div><div class="line">	<span class="comment"># 设置类属性</span></div><div class="line">	cls.__instances = &#123;&#125;</div><div class="line">	<span class="comment"># 修改享元类实例化时的逻辑</span></div><div class="line">	cls.__new__ = _get_instance</div><div class="line">	<span class="keyword">return</span> cls</div><div class="line"></div><div class="line"><span class="comment">#----------------------------------------------------------</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = metaflyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">        self.a = a</div><div class="line">        self.b = b</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = metaflyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line">        self.x = x</div><div class="line">        self.y = y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> Egg(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="comment"># Subclassing a flyweight class</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">    <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div></pre></td></tr></table></figure>
+<h3 id="10-Pure函数超类版本"><a href="#10-Pure函数超类版本" class="headerlink" title="10. Pure函数超类版本"></a>10. Pure函数超类版本</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line">metaflyweight = <span class="keyword">lambda</span> name, parents, attrs: type(</div><div class="line">	name,</div><div class="line">    parents,</div><div class="line">	<span class="comment">#  直接通过__new__, __instances加入attrs</span></div><div class="line">    dict(attrs.items() + [</div><div class="line">		(<span class="string">'__instances'</span>, &#123;&#125;),</div><div class="line">		(<span class="string">'__new__'</span>, classmethod(</div><div class="line">			<span class="keyword">lambda</span> cls, *args, **kwargs: cls.__instances.setdefault(</div><div class="line">				(args, tuple(kwargs.items())),</div><div class="line">				super(type(cls), cls).__new__(*args, **kwargs))</div><div class="line">			)</div><div class="line">		)</div><div class="line">	])</div><div class="line">)</div><div class="line"></div><div class="line"><span class="comment">#----------------------------------------------------------</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Spam</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = metaflyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, a, b)</span>:</span></div><div class="line">        self.a = a</div><div class="line">        self.b = b</div><div class="line"></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Egg</span><span class="params">(object)</span>:</span></div><div class="line">    __metaclass__ = metaflyweight</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></div><div class="line">        self.x = x</div><div class="line">        self.y = y</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> Spam(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>) <span class="keyword">is</span> Egg(<span class="string">'a'</span>, <span class="string">'b'</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> Egg(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="comment"># Subclassing a flyweight class</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SubSpam</span><span class="params">(Spam)</span>:</span></div><div class="line">    <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="keyword">assert</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div><div class="line"><span class="keyword">assert</span> Spam(<span class="number">1</span>,<span class="number">2</span>) <span class="keyword">is</span> <span class="keyword">not</span> SubSpam(<span class="number">1</span>,<span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p><br></p>
+<h2 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h2><hr>
+<h4 id="考虑到继承和反射。"><a href="#考虑到继承和反射。" class="headerlink" title="考虑到继承和反射。"></a>考虑到继承和反射。</h4><p>如果需要继承或者反射，装饰器的方式是无效的(装饰器版本、函数式装饰器版本)。实际上，在这些版本中没有办法直接访问最原始定义的那个享元类。一些类属性(type, docstring, name, super classes等)不再能够访问。基于同样原因，我们不能使用装饰器作为一个超类(即不能通过@derector的方式实现超类的功能)。</p>
+<p>如果需要使用反射，一些超类的属性能够复制给被装饰对象。例如，通过手动或者functools模块中的<code>@wraps/@update_wrapper</code>。但是不是所有的属性都能够复制给被装饰对象。</p>
+<p>如果需要使用继承，对于装饰器版本来说，需要通过<code>_cls</code>访问真正的享元类本身。对于函数式装饰器版本来说就完全没有办法了。</p>
+<p>如果需要扩展享元类(添加属性、继承等），改善的装饰器版本更加适合。Mixin的版本也是可以直接使用的，因为处理了子类继承的问题。当然，超类的版本也运行的非常好，因为超类原本就是可以继承的。</p>
+<h4 id="考虑到垃圾回收"><a href="#考虑到垃圾回收" class="headerlink" title="考虑到垃圾回收"></a>考虑到垃圾回收</h4><p>如果要应用在生产环境，这些实例需要考虑垃圾回收。实际上，因为享元工厂中的字典缓存了实例，实例会一直被引用。这些实例在整个程序生命周期都不能通过自动垃圾回收而收回，导致大量的内存使用量以及一些错误的行为。</p>
+<p>如果希望享元模式能够如期望般运行，可以使用python的weakref模块中的<code>弱引用</code>(weak reference)。弱引用不会阻止垃圾回收机制的运行，当实例不再有引用时可以被正常的回收。另外weakref中有个对象叫做<code>WeakValueDictionary</code>，行为与<code>dict</code>一致不过其值自然是弱引用的。</p>
+<h4 id="考虑到可用性"><a href="#考虑到可用性" class="headerlink" title="考虑到可用性"></a>考虑到可用性</h4><p>我们考虑两种截然不同的实现方式：</p>
+<ol>
+<li>代理享元类：享元类被封装到对象内，通过代理实现想要的功能。例如《设计模式》的工厂版本、装饰器版本。</li>
+<li>修改享元类：将想要的功能直接添加入享元类中。例如改善的装饰器版本，超类版本，Mixin版本。</li>
+</ol>
+<p>从最终使用的角度考虑，所有的实现方式都是等价且透明的，只需要在超类、装饰器、mixin中3选1即可。</p>
+<p>从元数据和继承的角度考虑，修改的方式比代理的方式更加合适。修改的方式也没有额外的开销，而代理的方式需要为每一个享元类额外创建一个(代理享元类的)对象。</p>
+<p>然而，代理的方式比较普遍适用，而修改的方式只能适用于类。(不过鉴于python中一切皆对象的概念，修改的方式对函数也是可以的)</p>
+<p>最后，代理和装饰器比超类和继承更加具有柔性，后者很难应用于已经实现了的类中。改进的装饰器版本看起来更加有意思（估计那个super(type(cls), cls)就够让人奇怪的了）。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2015/02/06/note-asynchrounous/" rel="next" title="Unix中的几种I/O模型">
+                <i class="fa fa-chevron-left"></i> Unix中的几种I/O模型
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2015/12/14/openstack-eventlet/" rel="prev" title="Evenlet的基础greenlet">
+                Evenlet的基础greenlet <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2015/04/13/python-flyweight/"
+           data-title="python中的享元模式(flyweight)" data-url="http://fanchao01.github.io/blog/blog/2015/04/13/python-flyweight/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#享元模式"><span class="nav-number">1.</span> <span class="nav-text">享元模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-严格的《设计模式》中的享元模式"><span class="nav-number">1.1.</span> <span class="nav-text">1. 严格的《设计模式》中的享元模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-《设计模式》中的享元模式"><span class="nav-number">1.2.</span> <span class="nav-text">2. 《设计模式》中的享元模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-类装饰器版本"><span class="nav-number">1.3.</span> <span class="nav-text">3. 类装饰器版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-函数装饰器版本"><span class="nav-number">1.4.</span> <span class="nav-text">4. 函数装饰器版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-《设计模式》中的MixIn"><span class="nav-number">1.5.</span> <span class="nav-text">5. 《设计模式》中的MixIn</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-Minxin版本"><span class="nav-number">1.6.</span> <span class="nav-text">6. Minxin版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-改进的装饰器版本"><span class="nav-number">1.7.</span> <span class="nav-text">7. 改进的装饰器版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-超类版本"><span class="nav-number">1.8.</span> <span class="nav-text">8. 超类版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-函数式超类"><span class="nav-number">1.9.</span> <span class="nav-text">9. 函数式超类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-Pure函数超类版本"><span class="nav-number">1.10.</span> <span class="nav-text">10. Pure函数超类版本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#讨论"><span class="nav-number">2.</span> <span class="nav-text">讨论</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#考虑到继承和反射。"><span class="nav-number">2.0.1.</span> <span class="nav-text">考虑到继承和反射。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#考虑到垃圾回收"><span class="nav-number">2.0.2.</span> <span class="nav-text">考虑到垃圾回收</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#考虑到可用性"><span class="nav-number">2.0.3.</span> <span class="nav-text">考虑到可用性</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

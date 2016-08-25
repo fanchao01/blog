@@ -1,0 +1,659 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="requests中的认证机制
+用户可以通过Session.request接口传入auth参数指定用户名和密码。auth参数可以是(username, password)的数组；也可以是HTTPBaiscAuth类似的实例，只要支持调用即可。
+123:param auth: (optional) Auth tuple or callable to enable    Basic/Digest/Cus">
+<meta property="og:type" content="article">
+<meta property="og:title" content="requests的高级功能-认证机制与redirect机制">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2016/08/02/pythonlib-requests4/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="requests中的认证机制
+用户可以通过Session.request接口传入auth参数指定用户名和密码。auth参数可以是(username, password)的数组；也可以是HTTPBaiscAuth类似的实例，只要支持调用即可。
+123:param auth: (optional) Auth tuple or callable to enable    Basic/Digest/Cus">
+<meta property="og:updated_time" content="2016-08-25T03:50:11.075Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="requests的高级功能-认证机制与redirect机制">
+<meta name="twitter:description" content="requests中的认证机制
+用户可以通过Session.request接口传入auth参数指定用户名和密码。auth参数可以是(username, password)的数组；也可以是HTTPBaiscAuth类似的实例，只要支持调用即可。
+123:param auth: (optional) Auth tuple or callable to enable    Basic/Digest/Cus">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2016/08/02/pythonlib-requests4/"/>
+
+  <title> requests的高级功能-认证机制与redirect机制 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                requests的高级功能-认证机制与redirect机制
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-02T00:00:00-07:00" content="2016-08-02">
+              2016-08-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/requests/" itemprop="url" rel="index">
+                    <span itemprop="name">requests</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/08/02/pythonlib-requests4/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/08/02/pythonlib-requests4/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="requests中的认证机制"><a href="#requests中的认证机制" class="headerlink" title="requests中的认证机制"></a>requests中的认证机制</h3><hr>
+<p>用户可以通过<code>Session.request</code>接口传入<code>auth</code>参数指定用户名和密码。<code>auth</code>参数可以是<code>(username, password)</code>的数组；也可以是<code>HTTPBaiscAuth</code>类似的实例，只要支持调用即可。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">:param auth: (optional) Auth tuple <span class="keyword">or</span> callable to enable</div><div class="line">    Basic/Digest/Custom HTTP Auth.</div></pre></td></tr></table></figure>
+<p>认证信息主要从多个方面来获取</p>
+<ul>
+<li>通过auth参数指定</li>
+<li>否则，从URI中获取。（<a href="http://username:passwd@www.sina.com）" target="_blank" rel="external">http://username:passwd@www.sina.com）</a></li>
+<li>否则，从Session.auth中获取。( 通过session.auth=(username,passwd)设置 )</li>
+<li>否则，从.netrc中获取</li>
+</ul>
+<h3 id="netrc"><a href="#netrc" class="headerlink" title=".netrc"></a>.netrc</h3><p>requests也支持<code>.netrc</code>，<code>.netrc</code>用于记录访问的认证信息，具体的语法可以参考<a href="http://www.mavetju.org/unix/netrc.php" target="_blank" rel="external">这里</a>，大致语法如下。</p>
+<h4 id="machine-definitions"><a href="#machine-definitions" class="headerlink" title="machine definitions"></a>machine definitions</h4><p>认证信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">machine ftp.freebsd.org</div><div class="line">	login anonymous</div><div class="line">	password edwin@mavetju.org</div><div class="line"></div><div class="line">machine myownmachine</div><div class="line">	login myusername</div><div class="line">	password mypassword</div></pre></td></tr></table></figure>
+<h4 id="macro-definitions"><a href="#macro-definitions" class="headerlink" title="macro definitions"></a>macro definitions</h4><p>定义ftp bash登录后的执行命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">macdef uploadtest</div><div class="line">	<span class="built_in">cd</span> /pub/tests</div><div class="line">	bin</div><div class="line">	put filename.tar.gz</div><div class="line">	quit</div><div class="line"></div><div class="line">macdef dailyupload</div><div class="line">	<span class="built_in">cd</span> /pub/tests</div><div class="line">	bin</div><div class="line">	put daily-<span class="variable">$1</span>.tar.gz</div><div class="line">	quit</div></pre></td></tr></table></figure>
+<h3 id="requests中的redirect机制"><a href="#requests中的redirect机制" class="headerlink" title="requests中的redirect机制"></a>requests中的redirect机制</h3><hr>
+<p>当访问<code>www.sina.com</code>时，会发现requests中缓存了两个地址<code>www.sina.com</code>与<code>www.sina.com.cn</code>，因为前一个地址会被重定向到后一个地址上。当我们用curl工具直接访问会发现，该地址返回了<code>301 Moved Permanently</code>以及<code>Location: http://www.sina.com.cn</code>。于是<code>requests</code>会自动对重定向地址再次发起请求。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">$ curl -i -X GET <span class="string">'http://www.sina.com'</span></div><div class="line">  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</div><div class="line">                                 Dload  Upload   Total   Spent    Left  Speed</div><div class="line">100   178  100   178    0     0    712      0 --:--:-- --:--:-- --:--:--   712HTTP/1.1 301 Moved Permanently</div><div class="line">Server: nginx</div><div class="line">Date: Tue, 02 Aug 2016 05:20:52 GMT</div><div class="line">Content-Type: text/html</div><div class="line">Location: http://www.sina.com.cn/       <span class="comment"># 重定向后的地址</span></div><div class="line">Expires: Tue, 02 Aug 2016 05:22:52 GMT</div><div class="line">Cache-Control: max-age=120</div><div class="line">Age: 96</div><div class="line">Content-Length: 178</div><div class="line">X-Cache: HIT from xd33-78.sina.com.cn</div><div class="line"></div><div class="line">&lt;html&gt;</div><div class="line">&lt;head&gt;&lt;title&gt;301 Moved Permanently&lt;/title&gt;&lt;/head&gt;      <span class="comment"># status_code和Moved Permanently</span></div><div class="line">&lt;body bgcolor=<span class="string">"white"</span>&gt;</div><div class="line">&lt;center&gt;&lt;h1&gt;301 Moved Permanently&lt;/h1&gt;&lt;/center&gt;</div><div class="line">&lt;hr&gt;&lt;center&gt;nginx&lt;/center&gt;</div><div class="line">&lt;/body&gt;</div><div class="line">&lt;/html&gt;</div></pre></td></tr></table></figure>
+<p>重定向后的访问逻辑主要在<code>SessionRedirectMixin</code>中（具体的请求过程分析参见<a href="http://fanchao01.github.io/blog/2016/07/29/pythonlib-requests1.html">这里</a>)</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">resp = requests.get(<span class="string">'http://www.sina.com'</span>)</div><div class="line"></div><div class="line">resp   <span class="comment"># 返回重定向后的真实访问请求response</span></div><div class="line">Out[<span class="number">10</span>]: &lt;Response [<span class="number">200</span>]&gt;</div><div class="line"></div><div class="line">resp.url</div><div class="line">Out[<span class="number">11</span>]: <span class="string">u'http://www.sina.com.cn/'</span></div><div class="line"></div><div class="line">resp.history</div><div class="line">Out[<span class="number">12</span>]: [&lt;Response [<span class="number">301</span>]&gt;]   <span class="comment"># 多个重定向的访问response</span></div><div class="line"></div><div class="line">resp.history[<span class="number">0</span>].url</div><div class="line">Out[<span class="number">13</span>]: <span class="string">u'http://www.sina.com/'</span>  <span class="comment"># 最初传入的地址。</span></div></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SessionRedirectMixin</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">resolve_redirects</span><span class="params">(self, resp, req, stream=False, timeout=None,</span></span></div><div class="line">                          verify=True, cert=None, proxies=None, **adapter_kwargs):</div><div class="line">        <span class="string">"""Receives a Response. Returns a generator of Responses."""</span></div><div class="line"></div><div class="line">        i = <span class="number">0</span></div><div class="line">        hist = [] <span class="comment"># keep track of history</span></div><div class="line">        </div><div class="line">        <span class="comment"># is_redirect就是返回的code in [301, 302, 303, 307, 308] 且headers中有Location字段</span></div><div class="line">        <span class="keyword">while</span> resp.is_redirect:</div><div class="line">            prepared_request = req.copy()</div><div class="line"></div><div class="line">            <span class="keyword">if</span> i &gt; <span class="number">0</span>:</div><div class="line">                <span class="comment"># Update history and keep track of redirects.</span></div><div class="line">                hist.append(resp)</div><div class="line">                new_hist = list(hist)</div><div class="line">                resp.history = new_hist</div><div class="line"></div><div class="line">            <span class="keyword">try</span>:</div><div class="line">                resp.content  <span class="comment"># Consume socket so it can be released</span></div><div class="line">            <span class="keyword">except</span> (ChunkedEncodingError, ContentDecodingError, RuntimeError):</div><div class="line">                resp.raw.read(decode_content=<span class="keyword">False</span>)</div><div class="line"></div><div class="line">            <span class="keyword">if</span> i &gt;= self.max_redirects:    <span class="comment"># 默认值为30</span></div><div class="line">                <span class="keyword">raise</span> TooManyRedirects(<span class="string">'Exceeded %s redirects.'</span> % self.max_redirects, response=resp)</div><div class="line"></div><div class="line">            <span class="comment"># Release the connection back into the pool.</span></div><div class="line">            resp.close()</div><div class="line"></div><div class="line">            url = resp.headers[<span class="string">'location'</span>]   <span class="comment"># Location地址</span></div><div class="line"></div><div class="line">            <span class="comment"># Handle redirection without scheme (see: RFC 1808 Section 4)</span></div><div class="line">            <span class="keyword">if</span> url.startswith(<span class="string">'//'</span>):</div><div class="line">                parsed_rurl = urlparse(resp.url)</div><div class="line">                url = <span class="string">'%s:%s'</span> % (parsed_rurl.scheme, url)</div><div class="line"></div><div class="line">            <span class="comment"># The scheme should be lower case...</span></div><div class="line">            parsed = urlparse(url)</div><div class="line">            url = parsed.geturl()</div><div class="line"></div><div class="line">            <span class="comment"># Facilitate relative 'location' headers, as allowed by RFC 7231.</span></div><div class="line">            <span class="comment"># (e.g. '/path/to/resource' instead of 'http://domain.tld/path/to/resource')</span></div><div class="line">            <span class="comment"># Compliant with RFC3986, we percent encode the url.</span></div><div class="line">            <span class="keyword">if</span> <span class="keyword">not</span> parsed.netloc:</div><div class="line">                url = urljoin(resp.url, requote_uri(url))</div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                url = requote_uri(url)</div><div class="line"></div><div class="line">            prepared_request.url = to_native_string(url)</div><div class="line">            <span class="comment"># Cache the url, unless it redirects to itself.</span></div><div class="line">            <span class="keyword">if</span> resp.is_permanent_redirect <span class="keyword">and</span> req.url != prepared_request.url:</div><div class="line">                self.redirect_cache[req.url] = prepared_request.url</div><div class="line"></div><div class="line">            self.rebuild_method(prepared_request, resp)</div><div class="line"></div><div class="line">            <span class="comment"># https://github.com/kennethreitz/requests/issues/1084</span></div><div class="line">            <span class="keyword">if</span> resp.status_code <span class="keyword">not</span> <span class="keyword">in</span> (codes.temporary_redirect, codes.permanent_redirect):</div><div class="line">                <span class="keyword">if</span> <span class="string">'Content-Length'</span> <span class="keyword">in</span> prepared_request.headers:</div><div class="line">                    <span class="keyword">del</span> prepared_request.headers[<span class="string">'Content-Length'</span>]</div><div class="line"></div><div class="line">                prepared_request.body = <span class="keyword">None</span></div><div class="line"></div><div class="line">            headers = prepared_request.headers</div><div class="line">            <span class="keyword">try</span>:</div><div class="line">                <span class="keyword">del</span> headers[<span class="string">'Cookie'</span>]</div><div class="line">            <span class="keyword">except</span> KeyError:</div><div class="line">                <span class="keyword">pass</span></div><div class="line"></div><div class="line">            <span class="comment"># Extract any cookies sent on the response to the cookiejar</span></div><div class="line">            <span class="comment"># in the new request. Because we've mutated our copied prepared</span></div><div class="line">            <span class="comment"># request, use the old one that we haven't yet touched.</span></div><div class="line">            extract_cookies_to_jar(prepared_request._cookies, req, resp.raw)</div><div class="line">            prepared_request._cookies.update(self.cookies)</div><div class="line">            prepared_request.prepare_cookies(prepared_request._cookies)</div><div class="line"></div><div class="line">            <span class="comment"># Rebuild auth and proxy information.</span></div><div class="line">            proxies = self.rebuild_proxies(prepared_request, proxies)</div><div class="line">            self.rebuild_auth(prepared_request, resp)</div><div class="line"></div><div class="line">            <span class="comment"># Override the original request.</span></div><div class="line">            req = prepared_request</div><div class="line">            <span class="comment">#　重新发起send操作。</span></div><div class="line">            resp = self.send(</div><div class="line">                req,</div><div class="line">                stream=stream,</div><div class="line">                timeout=timeout,</div><div class="line">                verify=verify,</div><div class="line">                cert=cert,</div><div class="line">                proxies=proxies,</div><div class="line">                allow_redirects=<span class="keyword">False</span>,</div><div class="line">                **adapter_kwargs</div><div class="line">            )</div><div class="line"></div><div class="line">            extract_cookies_to_jar(self.cookies, prepared_request, resp.raw)</div><div class="line"></div><div class="line">            i += <span class="number">1</span></div><div class="line">            <span class="keyword">yield</span> resp</div></pre></td></tr></table></figure>
+<p>一般情况下只有指定的方法能够重定向</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">允许重定向： GET OPTIONS HEAD </div><div class="line">不能重定向：POST PUT PATCH DELETE</div></pre></td></tr></table></figure>
+<p>根据重定向返回的状态码和访问方法，对重定向地址的访问需要修改访问方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">原访问方法   返回的状态码  状态码名字     新访问方法</div><div class="line">GET/OPTIONS     303      see_other      GET</div><div class="line">GET/OPTIONS     302      found          GET</div><div class="line">POST            301      moved          GET</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/07/30/pythonlib-request2/" rel="next" title="requests的高级功能-超时时间">
+                <i class="fa fa-chevron-left"></i> requests的高级功能-超时时间
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/08/02/pythonlib-requests4/"
+           data-title="requests的高级功能-认证机制与redirect机制" data-url="http://fanchao01.github.io/blog/blog/2016/08/02/pythonlib-requests4/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">28</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#requests中的认证机制"><span class="nav-number">1.</span> <span class="nav-text">requests中的认证机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#netrc"><span class="nav-number">2.</span> <span class="nav-text">.netrc</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#machine-definitions"><span class="nav-number">2.1.</span> <span class="nav-text">machine definitions</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#macro-definitions"><span class="nav-number">2.2.</span> <span class="nav-text">macro definitions</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#requests中的redirect机制"><span class="nav-number">3.</span> <span class="nav-text">requests中的redirect机制</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
