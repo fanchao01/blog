@@ -248,6 +248,158 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2014/12/08/ruby-my-opinions/" itemprop="url">
+                  我对Ruby的一些观点
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-08T00:00:00-08:00" content="2014-12-08">
+              2014-12-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/language/" itemprop="url" rel="index">
+                    <span itemprop="name">language</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/language/ruby/" itemprop="url" rel="index">
+                    <span itemprop="name">ruby</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/12/08/ruby-my-opinions/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/12/08/ruby-my-opinions/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="个人好恶"><a href="#个人好恶" class="headerlink" title="个人好恶"></a>个人好恶</h3><hr>
+<p>我给编程语言贴上个人好恶的标签以便更快的掌握它。这个道理比较简单，既然我不喜欢ruby，那么我就要弄清楚我不喜欢它的哪里，这些<strong>哪里</strong>就是语言的语法、模型、惯例等等。</p>
+<p>简单的来说，我不喜欢Ruby：）</p>
+<h3 id="哪里"><a href="#哪里" class="headerlink" title="哪里"></a>哪里</h3><hr>
+<h4 id="Ruby的哲学"><a href="#Ruby的哲学" class="headerlink" title="Ruby的哲学"></a>Ruby的哲学</h4><p>&lt;松本行弘的程序世界&gt;中说发明Ruby是“因为它给我带来了快乐”，“用Ruby开发很快乐”，”让程序设计更快乐而开发的程序语言”，<strong>快乐</strong>是Ruby最根本的哲学。在我看来，Ruby的快乐是一种发散式的。同一个问题提供多种解决方法（提供多种的语法元素），大量的挪用其他语言方便编程的元素等方式都是发散式的。让程序员充满好奇，同时提供了大量的武器(每个类中大量的方法）可以使每个人用自己喜欢的方式去编程。但这些都是有代价的，提高了涉入的门槛以及作为大型项目语言的困难程度，自由而不统一，RoR的默认遵从最佳实践的原则实际是为了补偿Ruby的自由。</p>
+<h4 id="多种语言的混合体"><a href="#多种语言的混合体" class="headerlink" title="多种语言的混合体"></a>多种语言的混合体</h4><p>解决问题不止一个方法（there is not only one way to do），Ruby为了这个目的混合了大量不同语言的语法。Ruby的这种混合体不是吸收各种语言的优秀元素从而自成一体的混合，而是将不同语言的好用的元素拼凑成一个整体的混合。初步涉入，Ruby会给我一种四不像的怪异感，AWK的BEGING/END语法，bash的HereDocument，不同语言的输出函数echo/print/puts，C++的new实例方法，lisp的block等等。将其他语言的好用的语法元素直接搬过来套在自己的头上，很难达到一种调和一致的感觉。</p>
+<h4 id="为了支持完全面向对象的大量方法"><a href="#为了支持完全面向对象的大量方法" class="headerlink" title="为了支持完全面向对象的大量方法"></a>为了支持完全面向对象的大量方法</h4><p>Ruby中有个String类型，类似Python的str、C++的std::string等。不包括编码，字符、unpack指令等，String类有78个方法。如果再加上编码字符unpack等，差不多会多达150。为了完全支持面向对象，将操作塞入类型中使其成为方法，而不是像C那样实现为功能函数，也不太像Java那样实现为类的静态方法，而是每个实例都携带了大量的方法(即使一些方法完全是为了作为面向对象的语法糖）。</p>
+<h4 id="多种方法的初始化"><a href="#多种方法的初始化" class="headerlink" title="多种方法的初始化"></a>多种方法的初始化</h4><p>为了满足不同程序员的快乐，Ruby提供了不同的初始化方法。Ruby中的列表是一个可变异构容器，支持C++的new，Python的[]，lisp式的列表等初始化方式。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">names = Array.new</div><div class="line">names = Array.new(<span class="number">20</span>)</div><div class="line">names = Array.new(<span class="number">4</span>, <span class="string">'default_value'</span>)</div><div class="line"></div><div class="line"><span class="comment"># 上面3个可以看成同一个方法new的多态</span></div><div class="line"></div><div class="line">names = Array.new(<span class="number">10</span>)&#123; <span class="params">|e|</span> e = e *<span class="number">2</span> &#125; <span class="comment"># 第一次看到这个，我怎么也搞不清楚初始值在哪里</span></div><div class="line">names = Array.[](<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>)  <span class="comment"># 是不是像c的 int names[] = &#123;1, 2, 3, 4, 5&#125;</span></div><div class="line">names = Array[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]	<span class="comment"># 使用方括号</span></div><div class="line"></div><div class="line"><span class="comment"># 上面3中初始化方法，分别使用大括号、括号、方括号， 混合体的极端体现</span></div><div class="line"></div><div class="line">digits = Array(<span class="number">1</span>..<span class="number">9</span>)</div></pre></td></tr></table></figure>
+<h4 id="函数调用的多种形式"><a href="#函数调用的多种形式" class="headerlink" title="函数调用的多种形式"></a>函数调用的多种形式</h4><p>Ruby支持不带参数的调用，以及带有参数的调用的多种形式。不带参数的方法可以直接调用，没有括号或者其他的语法要求。当带有参数时，可以有带括号或者不带括号两种形式。所以，Ruby的内置Hash类型就有了很多方式初始化。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">months = Hash.new</div><div class="line">months = Hash.new()</div><div class="line"><span class="comment"># 可以带有或者不带括号</span></div><div class="line"></div><div class="line">months = Hash.new(<span class="string">"month"</span>)	<span class="comment"># 带有默认值的初始化</span></div><div class="line">months = Hash.new <span class="string">"month"</span>	<span class="comment"># 不带括号的参数调用</span></div><div class="line"></div><div class="line">months = Hash[<span class="string">"a"</span> =&gt; <span class="number">200</span>, <span class="string">"b"</span> =&gt; <span class="number">300</span>]</div><div class="line">months = Hash <span class="string">"a"</span>=&gt;<span class="number">200</span>, <span class="string">"b"</span>=&gt;<span class="number">300</span>	<span class="comment"># RoR风格</span></div><div class="line">months = &#123;<span class="string">"1"</span> =&gt; <span class="string">"jan"</span>, <span class="string">"2"</span> =&gt; <span class="string">"Feb"</span> &#125;	<span class="comment"># Python &#123;'1':'jan', '2':'Feb&#125;</span></div></pre></td></tr></table></figure>
+<h4 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h4><p>Ruby混合了多种语言的语法特色，一致性很差。例如多种的初始化方法、带参函数调用的多种形式。Ruby的哲学<strong>做事情有多种方法</strong>导致一致性非常不好，这一点是我非常不喜欢的。我心目中的编程语言类似&lt;黑客与画家&gt;中&lt;一百年后的编程语言&gt;中所说的，语言应该提供一个非常精简一致的内核，Ruby与此完全是背道而驰。再举个变量的定义和引用的例子，全局变量和引用需要$符号，局部变量完全不需要，实例的属性定义和赋值时需要@，类的属性需要@@。好吧，某种方式看也比较一致，不同类别的属性需要不同的前置符号。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$global</div><div class="line"></div><div class="line">puts $global</div></pre></td></tr></table></figure>
+<p>再举个等于比较的例子。Ruby中有4种比较运算符</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="bullet">1. </span>==		数值比较</div><div class="line"><span class="bullet">2. </span>===		case语句中的比较</div><div class="line"><span class="bullet">3. </span>.eql?	类型和数值比较</div><div class="line"><span class="bullet">4. </span>.equal?	id比较， 类似Pyhon的 is 关键字</div></pre></td></tr></table></figure>
+<h4 id="判断循环语句"><a href="#判断循环语句" class="headerlink" title="判断循环语句"></a>判断循环语句</h4><p>Ruby的语法不太愿意提供统一的规则，而是为现实中的各种逻辑情况都提供语法支持。例如Ruby中的各种条件和循环，retry，next，redo，这些语法支持差不多实现了各种变体的goto。在&lt;松本行弘的程序世界&gt;中谈到如何对待多重继承的问题时，松本行宏采用了Mixin的折中方式，既提供多重继承的支持但是又部分限制多重继承带来的问题。这里也同样，采用多种语法实现类似的goto语法支持，但是又限制了goto的随意性。</p>
+<p>从这里也可以理解到Ruby语言的设计哲学，最大程度的提供自由并对一些明显带来问题的部分采取限制。采用的方法是不直接支持这些语法（例如goto，多重继承），而是创造多个语法元素提供类似的语法支持同时规避掉原有问题。</p>
+<h4 id="unless"><a href="#unless" class="headerlink" title="unless"></a>unless</h4><p>unless这种东西真的有好处吗？unless可以看成是<code>if not</code>的变体，每次看到这个我都在脑海中人肉转换成 if not，特别是用在单独语句中。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">v = <span class="number">1</span></div><div class="line">puts <span class="number">1</span> <span class="keyword">unless</span> <span class="number">1</span> &gt; <span class="number">2</span></div><div class="line">puts <span class="number">1</span> <span class="keyword">if</span> <span class="keyword">not</span> <span class="number">1</span> &gt; <span class="number">2</span></div></pre></td></tr></table></figure>
+<h4 id="yield与block"><a href="#yield与block" class="headerlink" title="yield与block"></a>yield与block</h4><p>语句块在其他语言里面也存在，但是没有Ruby中的块这么强的功能。比如在C++中以大括号括起来的是语句块，可以定义局部变量、类的构建和析构，但是不能像Ruby中这样作为参数传递。Ruby中的块类似于Lisp中的lambda语句，可以作为参数传递、可以调用等等。或者说像Javascript中的first-function可以在使用的位置直接定义。结合yield，块可以发挥很大的作用，例如协程等</p>
+<p>#### </p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2014/11/21/notes-howtodisagree/" itemprop="url">
                   笔记-如何反驳-HowToDisagree
                 </a>
@@ -2596,7 +2748,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">29</span>
+              <span class="site-state-item-count">30</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
