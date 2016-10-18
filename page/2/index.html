@@ -248,6 +248,443 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2015/01/17/python-parttern/" itemprop="url">
+                  Python中的单例模式
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-17T00:00:00-08:00" content="2015-01-17">
+              2015-01-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/01/17/python-parttern/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/01/17/python-parttern/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>(梳理下python中的设计模式。这里面的设计模式不仅仅是传统意义中的设计模式，还有python中的一些惯用法。）</p>
+<h3 id="单例模式-Singleton"><a href="#单例模式-Singleton" class="headerlink" title="单例模式 Singleton"></a>单例模式 Singleton</h3><hr>
+<p>单例模式的用途与全局变量一样，提供全局共享的唯一数据。单例模式封装数据和操作方法，需要保证方法返回的值一致（不变），并且单利模式类的初始化函数一般不能有参数。使用场景长见于处理和保存配置文件、只会实例化一次的实例等等。</p>
+<h4 id="1-一般的单例模式，利用锁保证一致性。"><a href="#1-一般的单例模式，利用锁保证一致性。" class="headerlink" title="1. 一般的单例模式，利用锁保证一致性。"></a>1. 一般的单例模式，利用锁保证一致性。</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> threading</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span><span class="params">(object)</span>:</span></div><div class="line">	_singleton_lock = threading.Lock()</div><div class="line"></div><div class="line"><span class="meta">	@classmethod</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">instance</span><span class="params">(cls)</span>:</span></div><div class="line">		<span class="keyword">if</span> <span class="keyword">not</span> hasattr(cls, <span class="string">'_instance'</span>):</div><div class="line">			<span class="keyword">with</span> cls._singleton_lock:</div><div class="line">				<span class="keyword">if</span> <span class="keyword">not</span> hasattr(cls, <span class="string">'_instance'</span>):</div><div class="line">					cls._instance = cls()</div><div class="line">		<span class="keyword">return</span> cls._instance</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">test</span><span class="params">(self)</span>:</span></div><div class="line">		print(<span class="string">'ok'</span>)</div><div class="line"></div><div class="line"><span class="keyword">assert</span> Singleton.instance() <span class="keyword">is</span> Singleton.instance()		<span class="comment">#True</span></div></pre></td></tr></table></figure>
+<div>
+
+<h4 id="2-python的单利模式，利用-new-返回唯一的实例。"><a href="#2-python的单利模式，利用-new-返回唯一的实例。" class="headerlink" title="2. python的单利模式，利用__new__返回唯一的实例。"></a>2. python的单利模式，利用<code>__new__</code>返回唯一的实例。</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> threading</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">PySingleton</span><span class="params">(object)</span>:</span></div><div class="line">	_singleton_lock = threading.Lock()</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">if</span> <span class="keyword">not</span> hasattr(cls, <span class="string">'_instance'</span>):</div><div class="line">			<span class="keyword">with</span> cls._singleton_lock:</div><div class="line">				<span class="keyword">if</span> <span class="keyword">not</span> hasattr(cls, <span class="string">'_instance'</span>):</div><div class="line">					cls._instance = super(PySingleton, cls).__new__(cls, *args, **kwargs)</div><div class="line">		<span class="keyword">return</span> cls._instance</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'init runs once'</span></div><div class="line"></div><div class="line">ps1 = PySingleton()		<span class="comment">#init runs once</span></div><div class="line">ps2 = PySingleton()		<span class="comment">#init runs once</span></div><div class="line"><span class="keyword">assert</span> ps1 <span class="keyword">is</span> ps2		<span class="comment">#True</span></div></pre></td></tr></table></figure>
+<p>Python的<code>__new__</code>特殊方法会多次调用初始化函数<code>__init__</code>，导致这个唯一的实例反复初始化。</p>
+<h4 id="3-模块单例"><a href="#3-模块单例" class="headerlink" title="3. 模块单例"></a>3. 模块单例</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment">#singleton.py  # 文件</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">_Singleton</span><span class="params">(object)</span>:</span></div><div class="line"></div><div class="line"><span class="meta">	@classmethod</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">instance</span><span class="params">(cls)</span>:</span></div><div class="line">		<span class="keyword">if</span> <span class="keyword">not</span> hasattr(cls, <span class="string">'_instance'</span>):</div><div class="line">			cls._instance = cls()</div><div class="line"></div><div class="line">		<span class="keyword">return</span> cls._instance</div><div class="line">			</div><div class="line">Singleton = _Singleton()</div><div class="line"></div><div class="line"><span class="keyword">del</span> _Singleton</div><div class="line"></div><div class="line"><span class="comment">#other.py</span></div><div class="line"></div><div class="line"><span class="keyword">from</span> singleton <span class="keyword">import</span> Singleton</div><div class="line"></div><div class="line">Singleton.instance().start()	<span class="comment"># 或者直接使用Singleton实例</span></div></pre></td></tr></table></figure>
+<p><code>import</code>有锁机制，不需要再使用锁进行并行保护；<code>classmethod</code>类方法可以通过方法和实例调用。</p>
+</div>
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2015/01/09/smartisan-white-t1/" itemprop="url">
+                  评论-白色锤子(smartisan T1)
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-09T00:00:00-08:00" content="2015-01-09">
+              2015-01-09
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/notes/" itemprop="url" rel="index">
+                    <span itemprop="name">notes</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/notes/life/" itemprop="url" rel="index">
+                    <span itemprop="name">life</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/01/09/smartisan-white-t1/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/01/09/smartisan-white-t1/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="白色锤子"><a href="#白色锤子" class="headerlink" title="白色锤子"></a>白色锤子</h3><hr>
+<p>圣诞节前得到一份礼物白色锤子手机T1。一直关注老罗，现在借此机会写点关于锤子的东西。</p>
+<h3 id="锤子优点"><a href="#锤子优点" class="headerlink" title="锤子优点"></a>锤子优点</h3><hr>
+<h4 id="漂亮"><a href="#漂亮" class="headerlink" title="漂亮"></a>漂亮</h4><p>白锤非常整洁漂亮，两面的玻璃触摸上去很光滑。</p>
+<h4 id="用心"><a href="#用心" class="headerlink" title="用心"></a>用心</h4><p>所有app可以看出确实用心在做，一些常用app经过一致的设计，给人与众不同感觉，让人眼前一亮。</p>
+<h4 id="流畅"><a href="#流畅" class="headerlink" title="流畅"></a>流畅</h4><p>比之前的一部Android手机流畅太多，鉴于之前手机的内存其实没什么可比性。但是，用起来比IPhone5还要流畅让我非常惊讶。</p>
+<h4 id="简洁"><a href="#简洁" class="headerlink" title="简洁"></a>简洁</h4><p>依赖于老罗的审美观，锤子手机的UI还是比较简洁。无论是从一开就有话题的九宫格设计，还是每个操控界面都很简洁大方，没有一般国产手机的粗糙感。</p>
+<h3 id="锤子缺点"><a href="#锤子缺点" class="headerlink" title="锤子缺点"></a>锤子缺点</h3><hr>
+<h4 id="误操作"><a href="#误操作" class="headerlink" title="误操作"></a>误操作</h4><p>误操作率很大，特别是应用中的右下角和左下角都会有明显的误触几率。减小这两块触屏的灵敏度是有效的解决办法</p>
+<h4 id="完全对称设计"><a href="#完全对称设计" class="headerlink" title="完全对称设计"></a>完全对称设计</h4><p>完全对称设计没有必要，左右侧按键非常不必要。1. 大屏都是两手操作，传统的布局对左右手谁更有利真不知道。2. 很多无法对称的东西，关机键、声孔、摄像头、距离传感器等。</p>
+<h4 id="顶部的关机键"><a href="#顶部的关机键" class="headerlink" title="顶部的关机键"></a>顶部的关机键</h4><p>关机键放在顶端对于大屏手机不明智，如果非要放在顶端，左边也要比右边好很多，更多的右利手单手几乎按不到，不如放在左端让左手按起来方便。</p>
+<h4 id="两侧的按键"><a href="#两侧的按键" class="headerlink" title="两侧的按键"></a>两侧的按键</h4><p>这种对称很不必要。1. 导致手机横放放不平，大屏手机横放看视频很常见；2. 快速偷拍功能，会导致非常多的误按，一个礼拜大概会有10张以上。</p>
+<h4 id="底部实体按键"><a href="#底部实体按键" class="headerlink" title="底部实体按键"></a>底部实体按键</h4><p>选择底部实体按键不是个好主意。1. 实体键需要比较大的压力，单手操作用大拇指按比较困难，容易导致手机滑落；2. 白锤三个实体键有不平感，中间只有一个亮灯真的不好看。</p>
+<h4 id="软件"><a href="#软件" class="headerlink" title="软件"></a>软件</h4><p>太过追求与众不同而忘记初衷。软件要给人好用美观，而不是装文艺青年，没有达到看山是山的境界。</p>
+<h2 id=""><a href="#" class="headerlink" title="###"></a>###</h2><p>强烈推荐，容易上手，时不时的小惊喜，同时需要容忍T1的不成熟。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2014/12/26/python-GIL/" itemprop="url">
+                  python中的多线程和GIL锁
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-26T00:00:00-08:00" content="2014-12-26">
+              2014-12-26
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python源码剖析/" itemprop="url" rel="index">
+                    <span itemprop="name">python源码剖析</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/12/26/python-GIL/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/12/26/python-GIL/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><hr>
+<p>最近工作中又遇到了GIL和多线程的问题，借此机会重新梳理一下。大致脉络仿照陈儒的《Python源码剖析》第15章<code>Python多线程机制</code>，但会将平台转移到Linux下的Pthread线程库上。主要介绍CPython解释器的C实现，具体的Python库(thread,threading)的介绍可以参考<a href="/2014/05/15/python_threading/">Python Threading Module</a>。同时会介绍下相关函数在Linux平台中的表现等。</p>
+<h3 id="python中的GIL锁"><a href="#python中的GIL锁" class="headerlink" title="python中的GIL锁"></a>python中的GIL锁</h3><hr>
+<p>CPython中有一个全局的解释器锁叫做<code>GIL</code>（global interpreter lock），对解释器中的共享变量提供保护。GIL不是必须的，可以通过对每个资源单独加锁的方式去掉GIL，也就是将GIL换成更细粒度的锁。实际上也有这么做的，不过结果是在单核上的性能不如有GIL的版本(2倍的差距)，大量的细粒度锁的开销消耗了大量的资源。所以，Guido有篇很著名的文章<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=214235" target="_blank" rel="external">It isn’t easy to remove GIL</a>讨论这个问题。如果去掉GIL需要考虑两件事：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="bullet">1. </span>不会降低Python在单核上的性能；</div><div class="line"><span class="bullet">2. </span>需要考虑如何将现在大量的库进行迁移；</div></pre></td></tr></table></figure>
+<p>总之从Python3的尴尬处境可以简单知道，CPython中的GIL是不可能去除的。</p>
+<p>做技术很多时候是在折中(tradeoff)，就比如当年Linux用宏内核架构会被认为过时一样。性能高、简单（实现简单）好用（使用快速）几乎立于不败之地，更多参考见这本书<a href="http://web.mit.edu/~simsong/www/ugh.pdf" target="_blank" rel="external">The Unix Hackers Handbook</a>。</p>
+<h3 id="GIL锁的类型以及语义"><a href="#GIL锁的类型以及语义" class="headerlink" title="GIL锁的类型以及语义"></a>GIL锁的类型以及语义</h3><hr>
+<p>代码中的<code>interpreter_lock</code>就是全局解释器锁，类型为<code>PyThread_type_lock</code>，简单的void指针，然后再根据不同的平台转换成对应类型的指针，在Linux中的类型是<code>pthread_lock</code>指针。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//python2.7.5/Python/ceval.c</span></div><div class="line"><span class="keyword">static</span> PyThread_type_lock interpreter_lock = <span class="number">0</span>; <span class="comment">/* This is the GIL */</span></div><div class="line"><span class="keyword">static</span> PyThread_type_lock pending_lock = <span class="number">0</span>; <span class="comment">/* for pending calls */</span></div><div class="line"><span class="keyword">static</span> <span class="keyword">long</span> main_thread = <span class="number">0</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span></span></div><div class="line"><span class="title">PyEval_ThreadsInitialized</span><span class="params">(<span class="keyword">void</span>)</span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> interpreter_lock != <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span></span></div><div class="line"><span class="title">PyEval_InitThreads</span><span class="params">(<span class="keyword">void</span>)</span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (interpreter_lock)</div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    interpreter_lock = PyThread_allocate_lock();</div><div class="line">    PyThread_acquire_lock(interpreter_lock, <span class="number">1</span>);</div><div class="line">    main_thread = PyThread_get_thread_ident();</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line"><span class="comment">//python2.7.5/Python/Thread_pthread.h</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</div><div class="line">	<span class="comment">/* 0=unlocked, 1=locked */</span></div><div class="line">    <span class="keyword">char</span>             locked; </div><div class="line">    <span class="comment">/* a &lt;cond, mutex&gt; pair to handle an acquire of a locked lock */</span></div><div class="line">    <span class="keyword">pthread_cond_t</span>   lock_released;</div><div class="line">    <span class="keyword">pthread_mutex_t</span>  mut;</div><div class="line">&#125; pthread_lock;</div></pre></td></tr></table></figure>
+<p>之所以需要<code>pthread_lock</code>而不是直接使用原生的<code>pthread_mutex_t</code>，是因为Pthread的标准有未定义的(undefined)部分，主要是：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="number">1.</span> 一个已经获取锁的线程再次获取同一个锁时的表现；</div><div class="line">(同一个线程多次调用pthread_mutex_lock，在linux中默认类型的锁第二次调用总会堵塞)</div><div class="line"><span class="number">2.</span>一个已经锁住的锁，被其他线程释放时的表现；</div><div class="line">(其他线程调用pthread_mutex_unlock，在linux中默认类型的锁总会被释放）</div></pre></td></tr></table></figure>
+<p>因此，Python实现了<code>pthread_lock</code>规避标准中的未定义部分。<code>pthread_lock</code>分为3个成员：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="number">1.</span> char locked：是否锁住的标志，每次加锁需要竞争此标志，如果为<span class="number">1</span>就是已经锁住，加锁的线程返回失败非<span class="number">0</span>或者等待；</div><div class="line"><span class="number">2.</span> pthread_cond_t lock_released：锁的等待队列，请求锁时带有waitflag的线程会等待在该条件变量上；</div><div class="line"><span class="number">3.</span> pthread_mutex_t mut：锁本身；</div></pre></td></tr></table></figure>
+<p>从上面的结构可以看到一个共识，加锁与代码之间的关系是为了使不同进程/线程串行执行代码，串行执行的结果就是共享资源操作结果的一致性。保证并行执行的正确性有几种不同的方法：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="bullet">1. </span>使程序串行执行临界区：加锁、信号、条件</div><div class="line"><span class="bullet">2. </span>资源本身保证原子性：原子操作、无锁队列</div><div class="line"><span class="bullet">3. </span>去掉共享资源：函数式编程</div></pre></td></tr></table></figure>
+<p><code>pthread_lock</code>有1组4个函数(接口)调用，分别是：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="bullet">1. </span>PyThread<span class="emphasis">_allocate_</span>lock: 分配一个锁；</div><div class="line"><span class="bullet">2. </span>PyThread<span class="emphasis">_free_</span>lock: free一个锁；</div><div class="line"><span class="bullet">3. </span>PyThread<span class="emphasis">_acquire_</span>lock(lock, waitflag):获取锁，waitflat=1时没有获取锁则等待；</div><div class="line">(waitflag=0，实现了pthread<span class="emphasis">_mutex_</span>trylock的语义；waitflag=1实现了pthread<span class="emphasis">_mutex_</span>lock的语义）</div><div class="line"><span class="bullet">4. </span>PyThread<span class="emphasis">_release_</span>lock: 总是成功释放锁，并且唤醒至少1个在等待锁的线程；</div><div class="line">(PyThread<span class="emphasis">_release_</span>lock实现中即使pthread<span class="emphasis">_mutex_</span>lock失败也会把locked恢复为0）</div></pre></td></tr></table></figure>
+<p>Python中只使用了默认类型的锁，<code>pthread_mutex_init</code>中的第二个参数为NULL，mut本身是一个多次请求会等待的锁，不过Python本身不使用等待的语义。<code>Phtread_lock</code>和一组操作函数创造了一个这样的线程锁：通过waitflag指定获取锁时是否等待，成功获取返回0，失败返回非0；释放锁总能成功并唤醒至少1个等待锁的线程。</p>
+<p>最后补充一下<code>PyThread_allocate_lock</code>中会调用<code>PyThread_init_thread</code>，进而调用<code>PyThread__init_thread</code>进行线程初始化。这是因为有些平台上进程和线程是完全分离的概念，需要调用相应的函数启动多线程库。在Linux的Pthread平台下是一进程多线程的模型，默认情况下一个进程也是一个线程，因此在这种情况下<code>PyThread__init_thread</code>是空的函数，完全不需要启动线程库的动作。</p>
+<h3 id="python中的线程"><a href="#python中的线程" class="headerlink" title="python中的线程"></a>python中的线程</h3><hr>
+<p>Python中通过thread等Python库启动的线程就是一个普通的Pthread线程，与C程序中调用<code>pthread_create</code>启动的线程没有本质区别，只不过Python中同一时间只有一个线程在运行，具体哪个线程能运行通过竞争GIL决定的。Python中线程的本质：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="number">1.</span> 同一时间只有一个Python线程（确切的说是虚拟机）运行，只能使用<span class="number">1</span>个CPU核心；</div><div class="line"><span class="number">2.</span> 不同线程的调度（哪个线程竞争到了GIL）完全由Python所在的操作系统决定；</div></pre></td></tr></table></figure>
+<h3 id="python启动"><a href="#python启动" class="headerlink" title="python启动"></a>python启动</h3><hr>
+<p>python中的线程启动通过<code>thread.start_new/start_new_thread</code>函数，然后调到CPython中的<code>thread_PyThread_start_new_thread</code>。这个函数主要处理用户调用时传入的参数，然后将启动函数和参数包装入bootstate结构，然后以<code>t_bootstrap</code>启动原生线程（linux下的pthread线程）。需要bootstate的主要原因有两点：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="bullet">1. </span>python不能直接以用户设置的函数启动线程，需要做一些处理；</div><div class="line"><span class="bullet">2. </span>原生的pthread线程pthread_create函数只能接受一个参数；</div><div class="line">(在linux c编程中创建线程需要传入多个参数也需要将过个参数封装到单个结构中）</div></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> PyMethodDef thread_methods[] = &#123;</div><div class="line">    &#123;<span class="string">"start_new_thread"</span>,        (PyCFunction)thread_PyThread_start_new_thread,</div><div class="line">                            METH_VARARGS,</div><div class="line">                            start_new_doc&#125;,</div><div class="line">    &#123;<span class="string">"start_new"</span>,               (PyCFunction)thread_PyThread_start_new_thread,</div><div class="line">                            METH_VARARGS,</div><div class="line">                            start_new_doc&#125;,</div><div class="line">...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从调用thread模块一直到<code>PyThread_start_new_thread</code>的线程都是主线程在运行；调用<code>pthread_create</code>然后进入<code>t_bootstrap</code>的线程是子线程。先看下主线程的调用路径，主路径通过<code>pthread_create</code>创建了子线程然后返回。注意这个时候主线程是拿者GIL锁的。</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="regexp">//</span>python2.<span class="number">7.6</span><span class="regexp">/python/</span>Threadmodule.c</div><div class="line">thread_PyThread_start_new_thread</div><div class="line">	_PyThreadState_Preallock</div><div class="line">		new_threadstate</div><div class="line">		(设置threadstate，注意这个时候thread_id是主线程的id)</div><div class="line"></div><div class="line">	PyEval_InitThreads</div><div class="line">	（分配和获取GIL锁）</div><div class="line"></div><div class="line">	PyThread_start_new_thread</div><div class="line">		pthread_create</div><div class="line">		pthread_detach</div><div class="line"></div><div class="line">	PyInt_FromLong (返回）</div></pre></td></tr></table></figure>
+<p>这里面需要注意一点，主线程创建子线程后就detach了，所以Python中的子线程都是分离的。然后看下子线程的调用路径，需要说明从<code>pthread_create</code>创建子线程开始运行到<code>t_bootstrap</code>中的<code>PyEval_AcquireThread</code>的这段代码是没有运行在Python的虚拟机中的，也就是说这段代码和GIL没有关系，在这期间主线程和子线程（在多核机器中）是可以同时运行的(不排除争夺其它的锁而导致挂起)。</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="regexp">//</span>python2.<span class="number">7.6</span><span class="regexp">/python/</span>threadmodule.c</div><div class="line">t_bootstrap</div><div class="line">	PyThread_get_thread_ident</div><div class="line">	（这个时候将ident设置为真正的子线程的ident）</div><div class="line"></div><div class="line">	_PyThreadState_Init</div><div class="line">		_PyGILState_NoteThreadState</div><div class="line">			PyThread_set_key_value</div><div class="line">				find_key</div><div class="line">	（这段代码是将threadstate设置为每个线程的私有变量。主要做debug用。</div><div class="line">	 线程私有变量是这样一种变量，每个线程中的变量名是一样的，但是具体的值和线程相关，而且相互之间透明。</div><div class="line">	 在linux Pthread中由库直接提供支持。</div><div class="line">	 Python在其他平台中自己也实现了一个，可以看成一个ident:value的字典，但是每个线程只能取到自己ident上的值）</div><div class="line"></div><div class="line">	PyEval_AcquireThread</div><div class="line">		PyThread_acquire_lock</div><div class="line">		（等待获取GIL)</div><div class="line">		PyThread_State_Swap</div><div class="line">		（设置当前的全局变量 _PyThreadState_Current。每个Python线程在退出前必须调用这个函数换出自己，运行前调用换入自己）</div><div class="line"></div><div class="line">	PyEval_CallObjectWithKeywords</div><div class="line">		PyObject_call</div><div class="line">			<span class="keyword">func</span>-&gt;ob_type-&gt;tp_call</div><div class="line"></div><div class="line">	PyThreadState_Clear</div><div class="line"></div><div class="line">	PyThreadState_DeleteCurrent</div><div class="line">		PyThread_delete_key_value</div><div class="line">		PyEval_ReleaseLock</div><div class="line">		（释放GIL锁）</div><div class="line"></div><div class="line">	PyThread_exit_thread</div><div class="line">		<span class="keyword">exit</span>(<span class="number">0</span>)</div></pre></td></tr></table></figure>
+<p>上面是子线程的调用路径。到这里还有两个问题没有解决，第一个是子线程如何进入虚拟机运行的（进入<code>PyEval_EvalFrame</code>);第二个是主线程何时释放GIL以便子线程在<code>t_bootstrap</code>中获取到而运行。</p>
+<h4 id="第一个问题"><a href="#第一个问题" class="headerlink" title="第一个问题"></a>第一个问题</h4><p>先说第一个问题，在子线程调用路径中最后会调用<code>tp_call</code>，假设用户的子线程函数是函数，类似下面这样：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">myfunc</span><span class="params">(x)</span>:</span></div><div class="line">	do_something_with(x)</div><div class="line"></div><div class="line">tpid = thread.start_new_thread(myfunc, (<span class="number">1</span>,))</div></pre></td></tr></table></figure>
+<p>那么<code>tp_call</code>对应的是Python实现的<code>function_call</code>函数，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//python2.7.6/python/funcobject.c</span></div><div class="line"></div><div class="line">PyTypeObject PyFunction_Type = &#123;</div><div class="line">    PyVarObject_HEAD_INIT(&amp;PyType_Type, <span class="number">0</span>)</div><div class="line">    <span class="string">"function"</span>,</div><div class="line"> 	...</div><div class="line">    function_call,                             <span class="comment">/* tp_call */</span></div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>function_call</code>也在同一个文件中定义，它的调用路径见下。从中可以看到，每个线程对应一个Frame对象，也就是一个Python虚拟机，而不是一个Python虚拟机对应多个Python线程。（不像CPU那样，每个CPU对应多个线程，每个线程通过保存上下文设置寄存器进行切换）。</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">function_call</div><div class="line">	PyEval_EvalCodeEx</div><div class="line">	（获取<span class="function"><span class="keyword">func</span>字节码中存储的全局、局部变量、参数、闭包等等）</span></div><div class="line">		PyFrame_new</div><div class="line">		（创建新的Frame对象，Python虚拟机）</div><div class="line">		PyEval_EvalFrame</div><div class="line">		（运行创建的虚拟机）</div></pre></td></tr></table></figure>
+<h4 id="第二个问题"><a href="#第二个问题" class="headerlink" title="第二个问题"></a>第二个问题</h4><p>第二个问题，主线程何时释放GIL锁。Python代码在虚拟机Frame中运行，其中有个变量<code>_Py_Ticker</code>。当<code>_Py_Ticker</code>小于0时，Python会释放GIL锁进行一次Python线程的调度。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">        <span class="keyword">if</span> (-<span class="number">-_</span>Py_Ticker &lt; <span class="number">0</span>) &#123;</div><div class="line">            <span class="keyword">if</span> (*next_instr == SETUP_FINALLY) &#123;</div><div class="line">                <span class="comment">/* Make the last opcode before</span></div><div class="line">                   a try: finally: block uninterruptible. */</div><div class="line">                <span class="keyword">goto</span> fast_next_opcode;</div><div class="line">            &#125;</div><div class="line">            <span class="number">_</span>Py_Ticker = <span class="number">_</span>Py_CheckInterval;</div><div class="line">            tstate-&gt;tick_counter++;</div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> WITH_TSC</span></div><div class="line">            ticked = <span class="number">1</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">            <span class="keyword">if</span> (pendingcalls_to_do) &#123;</div><div class="line">                <span class="keyword">if</span> (Py_MakePendingCalls() &lt; <span class="number">0</span>) &#123;</div><div class="line">                    why = WHY_EXCEPTION;</div><div class="line">                    <span class="keyword">goto</span> on_error;</div><div class="line">                &#125;</div><div class="line">                <span class="keyword">if</span> (pendingcalls_to_do)</div><div class="line">                    <span class="comment">/* MakePendingCalls() didn't succeed.</span></div><div class="line">                       Force early re-execution of this</div><div class="line">                       "periodic" code, possibly after</div><div class="line">                       a thread switch */</div><div class="line">                    <span class="number">_</span>Py_Ticker = <span class="number">0</span>;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> (interpreter_lock) &#123;</div><div class="line">                <span class="comment">/* Give another thread a chance */</span></div><div class="line">				<span class="comment">//这里是一次GIL锁的释放和获取，子线程有机会获取GIL得以运行</span></div><div class="line">                <span class="keyword">if</span> (PyThreadState_Swap(<span class="literal">NULL</span>) != tstate)</div><div class="line">                    Py_FatalError(<span class="string">"ceval: tstate mix-up"</span>);</div><div class="line">                PyThread_release_lock(interpreter_lock);</div><div class="line"></div><div class="line">                <span class="comment">/* Other threads may run now */</span></div><div class="line"></div><div class="line">                PyThread_acquire_lock(interpreter_lock, <span class="number">1</span>);</div><div class="line">                <span class="keyword">if</span> (PyThreadState_Swap(tstate) != <span class="literal">NULL</span>)</div><div class="line">                    Py_FatalError(<span class="string">"ceval: orphan tstate"</span>);</div></pre></td></tr></table></figure>
+<p>需要说明几点:</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="number">1.</span> GIL锁的粒度是每个Python指令，在一个Python指令中的操作是原子操作；</div><div class="line"><span class="number">2.</span> PyEval_EvalFrame中有一些指令运行后会跳到fast_next_opcode，跳过了GIL调度的代码区，所以这些指令和紧接下来的一个指令都是原子操作；</div><div class="line">（例如 x = <span class="number">1</span>，依赖这种细微的具体实现编程是不可取的，只要记住一个Python指令是原子操作足已）；</div><div class="line"><span class="number">3.</span> 每次Pyhon线程调度的指令数不一定整好是_Py_CheckInterval（<span class="number">100</span>）个，有些指令会跳过释放GIL的代码区；</div><div class="line"><span class="number">4.</span> Python线程最后由谁竞争到了GIL完全由操作系统决定，也就是具体哪个线程执行由操作系统决定，Python只管释放/获取一次GIL锁；</div><div class="line"><span class="number">5.</span> 在线程创建和销毁的代码区有一部分不运行在Frame中，这时Python中多个线程可能同时运行；</div></pre></td></tr></table></figure>
+<h4 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h4><p>上面提到Pthread线程和Python线程，按照CPython实现来看，Pthread线程和Python是一一对应的。称为Python线程侧重于正在运行Python代码时的线程(<code>PyEval_EvalFrame</code>部分）；称为Pthread线程侧重于CPython中线程的创建/销毁时的线程，等同起来看也没有任何问题。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2014/12/08/ruby-my-opinions/" itemprop="url">
                   我对Ruby的一些观点
                 </a>
@@ -2282,432 +2719,11 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2014/05/15/python_threading/" itemprop="url">
-                  Python-Threading-Module
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-05-15T00:00:00-07:00" content="2014-05-15">
-              2014-05-15
-            </time>
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2014/05/15/python_threading/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/05/15/python_threading/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="threading-Lock"><a href="#threading-Lock" class="headerlink" title="threading.Lock()"></a>threading.Lock()</h1><hr>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">lock.acquire（[<span class="keyword">wait</span>])	非可重入锁。</div><div class="line">												获得锁返回 <span class="literal">True</span>；反之 <span class="literal">False</span></div><div class="line">		</div><div class="line">		a)<span class="keyword">wait</span>不设置，或者设置为 <span class="literal">True</span>，线程锁处在堵塞模式。</div><div class="line">		b)<span class="keyword">wait</span>不设置，或者设置为 <span class="literal">True</span>，acquire一个处在unlocked状态的线程锁，将立即返回<span class="literal">True</span>:</div><div class="line"></div><div class="line">			<span class="keyword">lock</span> = threading.Lock()</div><div class="line">			print lock.acquire()</div><div class="line">			&gt;&gt;&gt;<span class="literal">True</span></div><div class="line">		</div><div class="line">		acquire一个处在 <span class="keyword">locked</span>状态的线程锁，堵塞等待锁被释放。如果锁已经被调用线程获取，则导致死锁：</div><div class="line">			<span class="keyword">lock</span> = threading.Lock()</div><div class="line">			print lock.acquire（）</div><div class="line">			&gt;&gt;&gt;<span class="literal">True</span></div><div class="line"></div><div class="line">			lock.acquire()		#deadlock</div><div class="line"></div><div class="line">		c)<span class="keyword">wait</span>设置为 <span class="literal">False</span>，将处在非堵塞模式。</div><div class="line">		d)<span class="keyword">wait</span>设置为 <span class="literal">False</span>， acquire一个处在unlocked状态的线程锁，将立即返回 <span class="literal">True</span>：</div><div class="line">			<span class="keyword">lock</span> = threading.lock()</div><div class="line">			print lock.acquire(<span class="literal">False</span>)</div><div class="line">			&gt;&gt;&gt;<span class="literal">True</span></div><div class="line">			</div><div class="line">			print lock.acquire(<span class="literal">False</span>)</div><div class="line">			&gt;&gt;&gt;<span class="literal">False</span>	#不能获取锁，返回<span class="literal">False</span>（即使由已经持有锁的线程调用)</div><div class="line">			</div><div class="line">		acquire一个处在<span class="keyword">locked</span>状态的线程锁，将返回<span class="literal">False</span>。不会导致死锁。</div><div class="line">		（ lock.acquire(<span class="literal">False</span>), 类似linux pthread库中的 trylock()函数。获取锁立即返回<span class="literal">True</span>，不能获取锁立即返回<span class="literal">False</span> )</div></pre></td></tr></table></figure>
-<p><strong>总结</strong></p>
-<pre><code>&lt;table&gt;
-&lt;tr&gt;
-     &lt;td&gt; wait参数&lt;/td&gt; &lt;td&gt; lock处在unlocked状态 &lt;/td&gt; &lt;td&gt; lock处在locked状态 &lt;/td&gt;
-&lt;/tr&gt;&lt;tr&gt;
-    &lt;td&gt; 不设置或者 True &lt;/td&gt;&lt;td&gt; True &lt;/td&gt; &lt;td&gt; 等待直到unlocked，返回True&lt;/td&gt;
-&lt;/tr&gt;&lt;tr&gt;
-    &lt;td&gt; False &lt;/td&gt;&lt;td&gt; True &lt;/td&gt; &lt;td&gt; 立即返回 False &lt;/td&gt;
-&lt;/tr&gt;
-&lt;/table&gt;
-</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">lock.release() </div><div class="line">							  返回<span class="keyword">None</span>; 或者<span class="keyword">raise</span> thread.error</div><div class="line"></div><div class="line">		a) 可以被任意线程调用，即一个线程锁可以被持有改锁的线程释放，或者其他不持有该锁的线程释放</div><div class="line">			<span class="keyword">import</span> threading</div><div class="line">			<span class="keyword">import</span> time</div><div class="line"></div><div class="line"></div><div class="line">			<span class="function"><span class="keyword">def</span> <span class="title">unlock</span><span class="params">(lock)</span>:</span></div><div class="line">    			time.sleep(<span class="number">3</span>)</div><div class="line">				lock.release()</div><div class="line">    			<span class="keyword">print</span> <span class="string">'unlock in another thread'</span></div><div class="line"></div><div class="line">			lock = threading.Lock()</div><div class="line">			lock.acquire()	<span class="comment">#持有锁</span></div><div class="line">			release_in_another_thread = threading.Thread(target=unlock, args=[lock,])	<span class="comment">#在其他线程调用release</span></div><div class="line">			release_in_another_thread.start()</div><div class="line">			<span class="keyword">print</span> <span class="string">'acquire the lock again: '</span>, lock.acquire()	<span class="comment">#堵塞直到锁被释放，然后再次持有</span></div><div class="line"></div><div class="line">			<span class="comment">#2个线程同时print，顺序是任意的。</span></div><div class="line">			&gt;&gt;&gt;acquire the lock again:  <span class="keyword">True</span></div><div class="line">			&gt;&gt;&gt;unlock <span class="keyword">in</span> another thread</div><div class="line"></div><div class="line">		b) release一个处在unlocked状态的线程锁，会引起 thread.error异常。</div><div class="line">			lock = threading.Lock()</div><div class="line">			lock.release()</div><div class="line">			&gt;&gt;&gt;thread.error: release unlocked lock</div></pre></td></tr></table></figure>
-<h1 id="threading-RLock-verbose-None）-可重入锁-reentrant-lock-，"><a href="#threading-RLock-verbose-None）-可重入锁-reentrant-lock-，" class="headerlink" title="threading.RLock(verbose=None）        #可重入锁(reentrant lock)，"></a>threading.RLock(verbose=None）        #可重入锁(reentrant lock)，</h1><hr>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">a)verbose=<span class="keyword">None</span>，不打印调试信息</div><div class="line">b)acquire和release必须调用次数相同，release不能由不持有锁的线程调用(RuntimeError)</div><div class="line"></div><div class="line">		rlock.acquire([wait])</div><div class="line">								立即返回，获得锁返回<span class="keyword">True</span>；反之返回<span class="keyword">False</span>；非第一次获得锁返回 <span class="number">1</span>。</div><div class="line">	</div><div class="line">		a) 第一次获取锁返回<span class="keyword">True</span>; 非第一次获取锁返回 <span class="number">1</span>; 不能获取锁返回 <span class="keyword">False</span>。</div><div class="line">		b) 持有锁的线程重复调用acquire，wait默认、设置为<span class="keyword">True</span>、或者设置为<span class="keyword">False</span> 均立即返回。</div><div class="line">		c) 不持有锁的线程调用acquire，wait默认或者设置为<span class="keyword">True</span>则堵塞；wait设置为<span class="keyword">False</span>则立即返回 <span class="keyword">False</span>。</div><div class="line">		d) RLock可以反复获取多次，目前(<span class="number">2.7</span><span class="number">.5</span>)没有上限(至少<span class="number">1024</span>，估计受限于内存大小）。</div><div class="line"></div><div class="line">		rlock.release()</div><div class="line">								返回<span class="keyword">None</span>；release非持有的锁<span class="keyword">raise</span> RuntimeError;</div><div class="line"></div><div class="line">		a) 只能由持有锁的线程调用，否则<span class="keyword">raise</span> RuntimeError。</div><div class="line">		b）释放一个unlocked的锁，<span class="keyword">raise</span> RuntimeError 与Lock的情况不一致。</div></pre></td></tr></table></figure>
-<p><strong>Lock和RLock的区别</strong></p>
-<ol>
-<li>Lock能够由非持有锁的线程release，但是RLock不可以。</li>
-<li>Lock不能够重入(wait=True则死锁，wait=False则返回False), 但是RLock可以重入多次。</li>
-<li>Lock的acquire只返回 True 或者 False; Rlock重复获取锁时返回 1。</li>
-<li>对一个unlocked状态的lock调用 release 引起thread.error异常; RLock 则引起RuntimeError异常。</li>
-</ol>
-<h1 id="threading-Condition-lock"><a href="#threading-Condition-lock" class="headerlink" title="threading.Condition([lock])"></a>threading.Condition([lock])</h1><hr>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">     创建成功返回None; 失败返回AttributeEror(传入了错误的<span class="keyword">lock</span>参数）</div><div class="line"></div><div class="line">cv.acquire()		<span class="comment">--&gt; 		lock.acquire()</span></div><div class="line"></div><div class="line">	直接调用低层的lock.acquire函数。因此其表现与具体的<span class="keyword">lock</span>的类型相同。</div><div class="line"></div><div class="line">		a) 默认无参数调用，创建RLock</div><div class="line"></div><div class="line">		b) 传入threading.Lock()， 类型的<span class="keyword">lock</span>。</div><div class="line">	</div><div class="line">cv.release()		<span class="comment">--&gt;			lock.release()</span></div><div class="line"></div><div class="line">	直接调用低层的lock.release()函数。因此表现与具体的<span class="keyword">lock</span>的类型相同。</div><div class="line">	</div><div class="line">		a)默认参数调用，创建RLock， 如果<span class="keyword">release</span>一个unlocked状态的锁，返回RuntimeError</div><div class="line">	</div><div class="line">		b)传入threading.Lock， 如果<span class="keyword">release</span>一个unlocked状态的锁，返回 <span class="keyword">error</span>: <span class="keyword">release</span> unlocked <span class="keyword">lock</span></div><div class="line">	</div><div class="line">		c)由于RLock和<span class="keyword">Lock</span>处理<span class="keyword">release</span>的情况不同，因此返回也不同，具有不一致性。</div><div class="line"></div><div class="line">cv.wait([<span class="keyword">timeout</span>])		<span class="comment">--&gt;		lock.wait()</span></div><div class="line"></div><div class="line">	直接调用低层的lock.wait函数。因此表现与具体的<span class="keyword">lock</span>的类型相同</div><div class="line">	</div><div class="line"></div><div class="line">cv.notify_all == cv.notifyAll</div><div class="line"></div><div class="line">	后者在python3<span class="number">.0</span>中被取消。（所有camelName在py3<span class="number">.0</span>中都被转化为camel_name形式）</div></pre></td></tr></table></figure>
-<p><strong>令人感兴趣的是，由于Lock与RLock的不同，那么传入一个Lock与使用一个RLock作为Condition的锁时， 其表现究竟如何。</strong></p>
-<h1 id="threading-Semaphore-value-1"><a href="#threading-Semaphore-value-1" class="headerlink" title="threading.Semaphore(value=1)"></a>threading.Semaphore(value=1)</h1><hr>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">value默认值为1，即二元锁</div><div class="line"></div><div class="line">threading.acquire(blocking=True)</div><div class="line">	获取信号量，并将信号值减少1</div><div class="line">threading.release()</div><div class="line">	释放信号量，并将信号值加1</div><div class="line">	</div><div class="line">   	<span class="keyword">release</span>函数会将信号值增加<span class="number">1</span>。 Semaphore类不会记住信号值的初值(<span class="keyword">value</span>)，如果调用<span class="keyword">release</span>的次数多于acquire，那么会导致信号值变大。</div><div class="line">		</div><div class="line">	<span class="keyword">import</span> threading</div><div class="line">		</div><div class="line">	sem = threading.Semaphore(<span class="number">1</span>)</div><div class="line">	sem.acquire(<span class="literal">False</span>)	</div><div class="line">	&gt;&gt;&gt;<span class="literal">True</span></div><div class="line">	sem.acquire(<span class="literal">False</span>)</div><div class="line">	&gt;&gt;&gt;<span class="literal">False</span></div><div class="line">	sem.relase()</div><div class="line">	sem.release()	#多调用的<span class="keyword">release</span>导致下面能acquire两次。</div><div class="line">	sem.acquire(<span class="literal">False</span>)</div><div class="line">	&gt;&gt;&gt;<span class="literal">True</span></div><div class="line">	sem.acquire(<span class="literal">False</span>)</div><div class="line">	&gt;&gt;&gt;<span class="literal">True</span></div></pre></td></tr></table></figure>
-<h1 id="threading-Event"><a href="#threading-Event" class="headerlink" title="threading.Event"></a>threading.Event</h1><hr>
-<figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&gt;<span class="selector-tag">Event</span>本质上就是一个二元信号量</div><div class="line"></div><div class="line">*	<span class="selector-tag">e</span><span class="selector-class">.is_set</span>()	检查事件是否发生</div><div class="line">*	<span class="selector-tag">e</span><span class="selector-class">.set</span>()		设置事件发生</div><div class="line">*	<span class="selector-tag">e</span><span class="selector-class">.clear</span>()	清除事件</div><div class="line">*	<span class="selector-tag">e</span><span class="selector-class">.wait</span>(<span class="selector-attr">[timeout]</span>)	等待事件发生(<span class="selector-tag">e</span><span class="selector-class">.set</span>被调用)或者超时</div></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2014/01/01/python_snippets/" itemprop="url">
-                  Python惯用法和技巧等
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-01-01T00:00:00-08:00" content="2014-01-01">
-              2014-01-01
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/python/" itemprop="url" rel="index">
-                    <span itemprop="name">python</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2014/01/01/python_snippets/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/01/01/python_snippets/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="字符串格式化"><a href="#字符串格式化" class="headerlink" title="字符串格式化"></a>字符串格式化</h2><h3 id="format格式化"><a href="#format格式化" class="headerlink" title="format格式化"></a>format格式化</h3><p>支持位置和字典参数格式化。（不支持同时位置和字典参数形式）</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="string">'&#123;0&#125; &#123;0&#125;'</span>.format(<span class="number">1</span>)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">1</span> <span class="number">1</span></div><div class="line"></div><div class="line"><span class="string">'&#123;0&#125; &#123;0&#125;'</span>.format(<span class="string">"hello"</span>) </div><div class="line">&gt;&gt;&gt;<span class="string">'hello hello'</span></div><div class="line"></div><div class="line"><span class="string">'&#123;0&#125; &#123;1&#125;'</span>.format(<span class="string">'world'</span>)	<span class="comment">#不能有多余的大括号</span></div><div class="line">&gt;&gt;&gt;IndexError: tuple index out of range</div><div class="line"></div><div class="line"><span class="string">'&#123;var&#125;'</span>.format(var=<span class="number">1</span>) &gt;&gt;&gt;<span class="number">1</span></div><div class="line"></div><div class="line"><span class="string">'&#123;var&#125;'</span>.format(var=<span class="string">"hello"</span>) </div><div class="line">&gt;&gt;&gt;<span class="string">'hello'</span></div><div class="line"></div><div class="line"><span class="string">'&#123; var &#125;'</span>.format(var = <span class="number">1</span>) </div><div class="line"><span class="meta">&gt;&gt;&gt; </span>KeyError: <span class="string">' var '</span> </div><div class="line"></div><div class="line"><span class="string">'&#123;&#125;&#123;world&#125;'</span>.format(<span class="string">'hello'</span>)</div><div class="line">&gt;&gt;&gt;KeyError: <span class="string">'world'</span>	<span class="comment">#不能格式化目的字符串有大括号的字符串</span></div></pre></td></tr></table></figure>
-<h3 id="百分号格式化"><a href="#百分号格式化" class="headerlink" title="%百分号格式化"></a>%百分号格式化</h3><p>支持类型、位置和字典参数格式化。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">'%s" % "this is c type'</div><div class="line">&gt;&gt;&gt;'this is c type'</div><div class="line"></div><div class="line">'%(var)s, %(num)d' % &#123;'var':'string', 'num':101&#125;#注意这个可以是字符串</div><div class="line">&gt;&gt;&gt;'string, 101' </div><div class="line"></div><div class="line">'%r %r' % ('string', 101)</div><div class="line">&gt;&gt;&gt;"'string' 101'	#%r打印出原始对象，字符会带分号“”; 适合用在MySQL中作为value, 以及不知道对象的类型</div><div class="line"></div><div class="line">'%0.2f' % 1.1111  #c类型的格式化</div><div class="line">&gt;&gt;&gt;'1.11'</div><div class="line"></div><div class="line">'%-02d' % 1</div><div class="line">&gt;&gt;&gt;'1 '</div><div class="line"></div><div class="line">'%02d' % 1</div><div class="line">&gt;&gt;&gt;'01'</div><div class="line"></div><div class="line">'%02d' % 101</div><div class="line">&gt;&gt;&gt;'101'</div></pre></td></tr></table></figure>
-<h2 id="括号的作用"><a href="#括号的作用" class="headerlink" title="()括号的作用"></a>()括号的作用</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">t = (<span class="number">1</span>, <span class="number">2</span>)  <span class="comment">#tuple</span></div><div class="line">&gt;&gt;&gt;(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="number">2</span> * (<span class="number">1</span> + <span class="number">3</span>)	<span class="comment">#优先级</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">8</span></div><div class="line"></div><div class="line">(<span class="number">1</span>)	<span class="comment">#作用域， 所以单元素的tuple定义需要尾部的逗号，例如 (1,)</span></div><div class="line">&gt;&gt;&gt;<span class="number">1</span></div><div class="line"></div><div class="line">type((<span class="string">'a'</span>))	<span class="comment">#('a') -&gt; 'a', type('a') -&gt; str</span></div><div class="line">&gt;&gt;&gt;str</div><div class="line"></div><div class="line"><span class="keyword">if</span> (<span class="number">1</span> + <span class="number">1</span>):<span class="keyword">print</span> <span class="string">'ok'</span>  <span class="comment">#if(1 + 1), 括号相当于作用域</span></div><div class="line">&gt;&gt;&gt;ok</div><div class="line"></div><div class="line">(<span class="string">'not'</span></div><div class="line"> <span class="string">'a tuple, but str'</span>) <span class="comment">#连接符</span></div><div class="line">&gt;&gt;&gt;<span class="string">'not a tuple, but str'</span></div></pre></td></tr></table></figure>
-<h2 id="iter函数"><a href="#iter函数" class="headerlink" title="iter函数"></a>iter函数</h2><ul>
-<li>iter(collections) -&gt; iterator</li>
-<li>iter(callable, stop) -&gt; iterator<br>返回一个迭代器，反复调用callabe函数直到其返回stop</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> partial</div><div class="line"></div><div class="line"><span class="keyword">with</span> open(<span class="string">'inputfile'</span>, <span class="string">'rb'</span>) <span class="keyword">as</span> infile:</div><div class="line">	read64 = partial(infile.read, <span class="number">64</span>)</div><div class="line">	blocks = list(iter(read64, <span class="string">''</span>))  <span class="comment"># 以64byte为1个block,存入blocks</span></div><div class="line">	<span class="comment">#lines  = list(iter(file.readline, ''))   # file.readlines()</span></div></pre></td></tr></table></figure>
-<h2 id="类的私有方法"><a href="#类的私有方法" class="headerlink" title="类的私有方法"></a>类的私有方法</h2><p><code>__method</code>以双下划线开头的方法</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">class TestPrivateMethod(object):</div><div class="line">	def __private(self):</div><div class="line">		print 'private'</div><div class="line"></div><div class="line">	def public(self):</div><div class="line">		print 'call in public:', self.__private() #在实例内可以调用</div><div class="line"></div><div class="line">	@classmethod</div><div class="line">	def class(cls):</div><div class="line">		print 'call in class:', cls.__private() #在类内可以调用</div><div class="line"></div><div class="line">p = TestPrivateMethod()</div><div class="line">p.public()</div><div class="line">&gt;&gt;&gt;'call in public: private'</div><div class="line"></div><div class="line">TestPrivateMethod.class()</div><div class="line">&gt;&gt;&gt;'call in class: private'</div><div class="line"></div><div class="line">p.__private()</div><div class="line">&gt;&gt;&gt;AttributeError: 'TestPrivateMethod' class has not attribute '__private'</div><div class="line"></div><div class="line">TestPrivateMethod.__private()</div><div class="line">&gt;&gt;&gt;AttributeError: 'TestPrivateMethod' class has not attribute '__private'</div><div class="line"></div><div class="line">p._TestPrivateMethod__private()</div><div class="line">&gt;&gt;&gt;'private'	#python只是将__开头的私有方法改名，从而达到隐藏的目的</div></pre></td></tr></table></figure>
-<h2 id="类的私有属性，不能通过实例修改。"><a href="#类的私有属性，不能通过实例修改。" class="headerlink" title="类的私有属性，不能通过实例修改。"></a>类的私有属性，不能通过实例修改。</h2><p>类似全局变量和私有变量的关系</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span><span class="params">(object)</span>:</span></div><div class="line">	attr_in_class = <span class="number">1</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> self.attr_in_class</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">set</span><span class="params">(self)</span>:</span></div><div class="line">		self.attr_in_class = <span class="string">'set'</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">assign</span><span class="params">(self)</span>:</span></div><div class="line">		self.attr_in_class += <span class="number">1</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">set_in_class</span><span class="params">(self)</span>:</span></div><div class="line">		self.__class__.attr_in_class = <span class="string">'class'</span></div><div class="line"></div><div class="line"><span class="meta">	@classmethod</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">change_in_class</span><span class="params">(cls)</span>:</span></div><div class="line">		cls.attr_in_class = <span class="string">'cls'</span></div><div class="line"></div><div class="line">Test.attr_in_class	</div><div class="line">&gt;&gt;&gt;<span class="number">1</span></div><div class="line"></div><div class="line">ins = Test()</div><div class="line">ins.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="number">1</span></div></pre></td></tr></table></figure>
-<h2 id="修改类的类变量有两种方式"><a href="#修改类的类变量有两种方式" class="headerlink" title="修改类的类变量有两种方式"></a>修改类的类变量有两种方式</h2><h3 id="第一种方式通过类直接修改"><a href="#第一种方式通过类直接修改" class="headerlink" title="第一种方式通过类直接修改"></a>第一种方式通过类直接修改</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Test.change_in_class()	<span class="comment">#类方法实际是修改类(type的实例)的属性</span></div><div class="line">Test.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'cls'</span></div><div class="line"></div><div class="line">ins.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'cls'</span></div><div class="line"></div><div class="line">Test().attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'cls'</span>	<span class="comment">#类的共享变量被修改</span></div></pre></td></tr></table></figure>
-<h3 id="第二种方式通过实例的class-修改。"><a href="#第二种方式通过实例的class-修改。" class="headerlink" title="第二种方式通过实例的class 修改。"></a>第二种方式通过实例的<strong>class</strong> 修改。</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">ins.set_in_class()</div><div class="line">&gt;&gt;&gt;<span class="string">'class'</span></div><div class="line"></div><div class="line">Test.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'class'</span></div></pre></td></tr></table></figure>
-<p>当通过实例为 类属性 赋新值时，实际上是创建了一个新的实例属性，不会修改类属性。类似在函数内直接为全局变量赋值，不能修改全局变量，而是创建同名的局部变量</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">ins.attr_in_class = <span class="string">'instance'</span></div><div class="line">Test.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'class'</span></div><div class="line"></div><div class="line">Test().attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'class'</span></div><div class="line"></div><div class="line"><span class="keyword">in</span>.attr_in_class</div><div class="line">&gt;&gt;&gt;<span class="string">'instance'</span>	<span class="comment">#attr_in_class通过赋值，变为ins的实例变</span></div></pre></td></tr></table></figure>
-<p>当然，如果类属性是一个可变变量，例如 [], {} 可以调用对应的方法修改内部元素，而不会创建实例变量</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">TestMutable</span><span class="params">(object)</span>:</span></div><div class="line">	mut = []</div><div class="line"></div><div class="line">t = TestMutable()</div><div class="line">t.mut.append(<span class="number">1</span>)</div><div class="line">t.mut</div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>,]</div><div class="line"></div><div class="line">TestMutable.mut</div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>,]</div><div class="line"></div><div class="line">TestMutable().mut</div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>,]</div></pre></td></tr></table></figure>
-<p>类属性的最佳使用方式是，创建所有实例共享的变量，并且不会通过实例修改；或者通过 isntance.__class.var的方式显式的进行修改</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SumInstanceNum</span><span class="params">(object)</span>:</span></div><div class="line">	cnt = <span class="number">0</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__class__.cnt += <span class="number">1</span></div><div class="line">		<span class="comment">#do other construct thing</span></div><div class="line"></div><div class="line"><span class="meta">	@classmethod</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">get_instance_num</span><span class="params">(cls)</span>:</span></div><div class="line">		<span class="keyword">return</span> cls.cnt</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__del__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__class__.cnt -= <span class="number">1</span></div><div class="line">		</div><div class="line">```        </div><div class="line"></div><div class="line"><span class="comment">## 浅copy 和深copy</span></div><div class="line"></div><div class="line">* 浅复制(shallow copy):只复制最外层对象，不复制内部的子对象(只复制引用)。属于浅复制的有，赋值=、裂片操作[:]、函数copy.copy等。</div><div class="line">* 深复制(deep copy): 复制所有，包括对象(类，实例等）的内部对象。属于深复制的是copy.deepcopy</div><div class="line"></div><div class="line">特殊方法 `__copy__` 定义浅复制的操作。</div><div class="line">		</div><div class="line">```python</div><div class="line"><span class="comment"># 浅复制</span></div><div class="line">top = [<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>]]</div><div class="line">sec = top[:]</div><div class="line"><span class="keyword">print</span> top.append(<span class="number">3</span>)</div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>], <span class="number">3</span>]; </div><div class="line"></div><div class="line"><span class="keyword">print</span> sec </div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>]];</div><div class="line"></div><div class="line">top[<span class="number">2</span>].append(<span class="string">'c'</span>) </div><div class="line"><span class="keyword">print</span> top </div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'c'</span>], <span class="number">3</span>];</div><div class="line">              </div><div class="line"><span class="keyword">print</span> sec  </div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'c'</span>]]; <span class="comment">#同样增加元素 'c'</span></div><div class="line"></div><div class="line">top[<span class="number">2</span>] <span class="keyword">is</span> sec[<span class="number">2</span>]</div><div class="line">&gt;&gt;&gt;<span class="keyword">True</span></div><div class="line"></div><div class="line"><span class="comment"># 深复制</span></div><div class="line">deep = [<span class="number">1</span>, <span class="number">2</span>, [<span class="string">'a'</span>, <span class="string">'b'</span>]]</div><div class="line">deep2 = copy.deepcopy(deep)</div><div class="line"></div><div class="line">deep[<span class="number">2</span>] <span class="keyword">is</span> deep2[<span class="number">2</span>]</div><div class="line">&gt;&gt;&gt;<span class="keyword">False</span></div></pre></td></tr></table></figure>
-<h2 id="函数参数在定义时实例化，可变参数被共享"><a href="#函数参数在定义时实例化，可变参数被共享" class="headerlink" title="函数参数在定义时实例化，可变参数被共享"></a>函数参数在定义时实例化，可变参数被共享</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">foo</span><span class="params">(numbers=[])</span>:</span></div><div class="line">	numbers.append(<span class="number">9</span>)</div><div class="line">	<span class="keyword">print</span> numbers</div><div class="line">foo()</div><div class="line">&gt;&gt;&gt;[<span class="number">9</span>]</div><div class="line"></div><div class="line">foo()</div><div class="line">&gt;&gt;&gt;[<span class="number">9</span>, <span class="number">9</span>]</div></pre></td></tr></table></figure>
-<ul>
-<li>参数numbers在定义时候实例化，并且默认绑定，等于每次传入相同的实例化对象。</li>
-<li>更好的实践方式，定义默认的不可变参数，然后处理</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">foo</span><span class="params">(numbers=None)</span>:</span></div><div class="line">    numbers = [] <span class="keyword">if</span> numbers <span class="keyword">is</span> <span class="keyword">None</span> <span class="keyword">else</span> numbers</div><div class="line">    numbers.append(<span class="number">9</span>)</div><div class="line">    <span class="keyword">print</span> numbers</div></pre></td></tr></table></figure>
-<h2 id="list列表"><a href="#list列表" class="headerlink" title="list列表"></a>list列表</h2><p>list 支持<code>+</code>;不支持<code>-</code>操作符</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">la = [<span class="number">1</span>, <span class="number">2</span>,]</div><div class="line">lb = [<span class="number">3</span>, <span class="number">4</span>,]</div><div class="line">la + lb</div><div class="line">&gt;&gt;&gt;[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]</div><div class="line"></div><div class="line">lc = [<span class="number">1</span>,]</div><div class="line">la - lc</div><div class="line">&gt;&gt;&gt;TypeError: unsupported operands types(s) <span class="keyword">for</span> <span class="string">'-'</span>: <span class="string">'list'</span> <span class="keyword">and</span> <span class="string">'list'</span></div></pre></td></tr></table></figure>
-<h2 id="输出格式化的文本的第x行的第y列"><a href="#输出格式化的文本的第x行的第y列" class="headerlink" title="输出格式化的文本的第x行的第y列"></a>输出格式化的文本的第x行的第y列</h2><p>类似 grep ‘cpu0’ input_file |cut -d” “ -f2 命令， 选取cpu0行的第2个</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> re</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_field</span><span class="params">(data, field,  linestart=<span class="string">""</span>, sep=<span class="string">" "</span>)</span>:</span></div><div class="line"><span class="string">'''</span></div><div class="line">Parse data from string</div><div class="line">@param data: Data to parse</div><div class="line">example:</div><div class="line">	data:</div><div class="line">		cpu 1 2 3 4</div><div class="line">		cpu0 5 6 7 8</div><div class="line">		cpu1 9 10 11 12</div><div class="line">		linestart filed 0 1 2 3</div><div class="line">@param field: Position of data after linestart</div><div class="line">@param linestart: String to which start line</div><div class="line">@param sp: separator between parameters regular expression</div><div class="line">'''</div><div class="line">	search = re.compile(<span class="string">r'(&lt;=^%s)\s*(.*)'</span> % linestart, re.MULTILINE)</div><div class="line">	find = search.search(data)</div><div class="line">	<span class="keyword">if</span> find <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">		<span class="keyword">return</span> re.split(<span class="string">"%s"</span> % sep, find.group(<span class="number">1</span>))[field]</div><div class="line">	<span class="keyword">else</span>:</div><div class="line">		<span class="keyword">return</span> <span class="keyword">None</span></div></pre></td></tr></table></figure>
-<h2 id="slots-减少实例内存使用，"><a href="#slots-减少实例内存使用，" class="headerlink" title="__slots__减少实例内存使用，"></a><code>__slots__</code>减少实例内存使用，</h2><p><code>__slots__</code> 会阻止class建立 <code>__dict__</code> 属性，即阻止实例动态的添加属性,从而减少创建 <code>__dict__</code> 的内存消耗。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">#save bits to create __dict__</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Slot</span><span class="params">(object)</span>:</span></div><div class="line">__slots__ = []</div><div class="line"></div><div class="line">s = Slot()</div><div class="line"><span class="keyword">try</span>:</div><div class="line">	s.var  = <span class="number">1</span></div><div class="line"><span class="keyword">except</span> AttributeError:</div><div class="line">	<span class="keyword">print</span> <span class="string">"can not create attribute, __slot__  stops it"</span></div><div class="line"></div><div class="line"><span class="keyword">try</span>:</div><div class="line">	s.__dict__</div><div class="line"><span class="keyword">except</span> AttributeError:</div><div class="line">	<span class="keyword">print</span> <span class="string">"no __dict__ attribute, __slot__ stops it"</span></div></pre></td></tr></table></figure>
-<h2 id="一颗树结构"><a href="#一颗树结构" class="headerlink" title="一颗树结构"></a>一颗树结构</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> json</div><div class="line"></div><div class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">tree</span><span class="params">()</span>:</span>	<span class="keyword">return</span> defaultdict(tree)</div><div class="line"></div><div class="line">t = tree()</div><div class="line">t[<span class="string">'a'</span>][<span class="string">'b'</span>][<span class="string">'c'</span>] = <span class="number">1</span></div><div class="line">t[<span class="string">'a'</span>][<span class="string">'c'</span>] = <span class="number">2</span></div><div class="line"><span class="keyword">print</span> t[<span class="string">'a'</span>][<span class="string">'b'</span>][<span class="string">'c'</span>]</div><div class="line">&gt;&gt;&gt;<span class="number">1</span></div><div class="line"></div><div class="line"><span class="keyword">print</span> t[<span class="string">'a'</span>][<span class="string">'c'</span>]</div><div class="line">&gt;&gt;&gt;<span class="number">2</span></div><div class="line"></div><div class="line"><span class="keyword">print</span> json.dumps(t)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>&#123;<span class="string">'a'</span>:&#123;<span class="string">'b'</span>:&#123;<span class="string">'c'</span>:<span class="number">1</span>&#125;, <span class="string">'c'</span>:<span class="number">2</span>&#125;&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">dicts</span><span class="params">(t)</span>:</span></div><div class="line">	<span class="keyword">return</span> &#123;k: dicts(t[k]) <span class="keyword">for</span> k <span class="keyword">in</span> t&#125;</div></pre></td></tr></table></figure>
-<h2 id="context-manager上下文管理器"><a href="#context-manager上下文管理器" class="headerlink" title="context manager上下文管理器"></a>context manager上下文管理器</h2><p><code>with</code>与<code>as</code>关键词是<code>自动上下文管理</code>的语法支持。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">with</span> open(<span class="string">'./temp'</span>, <span class="string">'w'</span>) <span class="keyword">as</span> outfile:</div><div class="line">	outfile.write(<span class="string">'this is a test for context manager'</span>)</div></pre></td></tr></table></figure>
-<p><code>file</code> 类文件对象均支持 <code>Context Manager</code>。一个类实现 Context Manager的方法是利用 <code>__enter__</code> 和 <code>__exit__</code> 特殊方法。实例：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">class CM(object):</div><div class="line">	def __enter__(self):</div><div class="line">		print 'in enter'</div><div class="line">		return 'the object to be managered`	#返回的值即为被管理的对象，通过`as`赋值给其他名字。  </div><div class="line"></div><div class="line">	def __exit__(self, exc_type, exc_value, exc_tb):</div><div class="line">		print 'exit'</div><div class="line">		return True	#返回True，则在`with`程序块中出现的异常不会向外层raise，即异常被忽略(非常不建议这样做）</div><div class="line"></div><div class="line">with CM() as ret:</div><div class="line">	print 'in block'</div><div class="line">	print ret</div><div class="line">&gt;&gt;&gt;in enter						#在程序__enter__运行</div><div class="line">&gt;&gt;&gt;in block						#在block中运行</div><div class="line">&gt;&gt;&gt;the object to be managered	#__enter__返回，as赋值给ret</div><div class="line">&gt;&gt;&gt;exit							#在__exit__运行。</div></pre></td></tr></table></figure>
-<p>需要注意的点：</p>
-<ul>
-<li>a)如果在 <code>__enter__</code>内发生异常，则程序不进入context manager机制，直接抛出异常。</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">EnterException</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">raise</span> IOError(<span class="string">'test'</span>)	<span class="comment">#用IOError模拟异常</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self， *args)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'exit'</span></div><div class="line">		<span class="keyword">return</span> <span class="keyword">True</span></div><div class="line"></div><div class="line"><span class="keyword">with</span> EnterException():</div><div class="line">	<span class="keyword">print</span> <span class="string">'in block'</span></div><div class="line">&gt;&gt;&gt;IOError: <span class="string">'test'</span>		<span class="comment">#程序直接抛出异常，</span></div></pre></td></tr></table></figure>
-<ul>
-<li>b)如果在block内发生异常， <code>__exit__</code>将捕获异常。如果不返回True，则异常向上层传递。如果返回True，则异常被忽略。</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">IngoreException</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'enter'</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, *args)</span>:</span></div><div class="line">		<span class="keyword">print</span> args</div><div class="line">		<span class="keyword">return</span> <span class="keyword">True</span></div><div class="line"></div><div class="line"><span class="keyword">with</span> IngoreException():</div><div class="line">	<span class="keyword">raise</span> IOError(<span class="string">'will be slienced'</span>)</div><div class="line">&gt;&gt;&gt;enter</div><div class="line">&gt;&gt;&gt;[IOError, IOError(<span class="string">'will be slienced'</span>), traceback]</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>	<span class="comment">#不会有异常被抛出。</span></div></pre></td></tr></table></figure>
-<h3 id="如何对函数进行-context-manager"><a href="#如何对函数进行-context-manager" class="headerlink" title="如何对函数进行 context manager"></a>如何对函数进行 context manager</h3><p>利用 <code>contexlib</code> 模块, <code>try...finally...</code>和 <code>yield</code>语法。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> contexlib</div><div class="line"></div><div class="line"><span class="meta">@contexlib.contexmanager</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">go</span><span class="params">()</span>:</span></div><div class="line">	<span class="keyword">print</span> <span class="string">'before try'</span></div><div class="line">	<span class="keyword">try</span>:						<span class="comment">#__enter__</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'in enter'</span></div><div class="line">		<span class="keyword">yield</span> <span class="string">'ret value'</span>		<span class="comment"># return</span></div><div class="line">	<span class="keyword">except</span>:						<span class="comment"># __exit__</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'in exit'</span></div><div class="line"></div><div class="line"><span class="keyword">with</span> go() <span class="keyword">as</span> ret:</div><div class="line">	<span class="keyword">print</span> <span class="string">'in block'</span></div><div class="line">	<span class="keyword">print</span> ret</div><div class="line"></div><div class="line">&gt;&gt;&gt;before <span class="keyword">try</span></div><div class="line">&gt;&gt;&gt;<span class="keyword">in</span> enter</div><div class="line">&gt;&gt;&gt;<span class="keyword">in</span> block</div><div class="line">&gt;&gt;&gt;ret value</div><div class="line">&gt;&gt;&gt;<span class="keyword">in</span> exit</div></pre></td></tr></table></figure>
-<h3 id="同时有多个对象需要context-manager"><a href="#同时有多个对象需要context-manager" class="headerlink" title="同时有多个对象需要context manager"></a>同时有多个对象需要context manager</h3><p>例如复制一个文件内容到另一个文件。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">with</span> open(<span class="string">'infile'</span>, <span class="string">'r'</span>) <span class="keyword">as</span> infile, open(<span class="string">'outfile'</span>, <span class="string">'w'</span>) <span class="keyword">as</span> outfile:</div><div class="line">	outfile.write(infile.read())</div></pre></td></tr></table></figure>
-<h2 id="descriptor描述符"><a href="#descriptor描述符" class="headerlink" title="descriptor描述符"></a>descriptor描述符</h2><p>描述符是将一个方法转为属性的便捷方式。descriptor类必须包含至少一个 <code>__get__</code>, <code>__set__</code>, <code>__delete__</code> 特殊方法。 <code>__get__</code>描述一个属性取值时的表现; <code>__set__</code>描述一个属性赋值时的表现， <code>__delete__</code>描述一个属性被删除时的表现。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">class Descriptor(object):</div><div class="line">	def __init__(self, v):</div><div class="line">		self.value = v</div><div class="line">	def __get__(self, instance, owner):		</div><div class="line">		print 'instance:', instance</div><div class="line">		print 'owner:', owner</div><div class="line">		return self.value</div><div class="line">	def __del__(self, instance, owner):</div><div class="line">		del self.value</div><div class="line">	def __set__(self, instance, value):</div><div class="line">		self.value = value</div><div class="line"></div><div class="line">class User(object):</div><div class="line">	value = Descriptor(0.0)</div><div class="line"></div><div class="line">print User.value	#类调用value，instance为None，owner为 User类, value所在的类。</div><div class="line">					#value的属性被改变，是一个描述符，而不是类的属性。</div><div class="line">                    #（或者说，这个类属性的取值、赋值等行为被改写）</div><div class="line">&gt;&gt;&gt;instance None    </div><div class="line">&gt;&gt;&gt;owner &lt;class '__main__.User'&gt;</div><div class="line">&gt;&gt;&gt;0.0</div><div class="line"></div><div class="line">u = User()</div><div class="line">print u.value		#实例调用value， instance为User的实例， owner为 User类。</div><div class="line">&gt;&gt;&gt;instance &lt;__main__.User object at 0x00000000046C7748&gt;</div><div class="line">&gt;&gt;&gt;owner &lt;class '__main__.User'&gt;</div><div class="line">&gt;&gt;&gt;0.0</div></pre></td></tr></table></figure>
-<p>更常见的情况下，是将两个相互联系的属性通过descriptor连接起来。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Meter</span><span class="params">(object)</span>:</span></div><div class="line"><span class="string">'''Descriptor for a meter.'''</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, value=<span class="number">0.0</span>)</span>:</span></div><div class="line">    	self.value = float(value)</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__get__</span><span class="params">(self, instance, owner)</span>:</span></div><div class="line">  	  <span class="keyword">return</span> self.value</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__set__</span><span class="params">(self, instance, value)</span>:</span></div><div class="line">	    self.value = float(value)</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Foot</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="string">'''Descriptor for a foot.'''</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__get__</span><span class="params">(self, instance, owner)</span>:</span></div><div class="line"> 		<span class="keyword">return</span> instance.meter * <span class="number">3.2808</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__set__</span><span class="params">(self, instance, value)</span>:</span></div><div class="line">    	instance.meter = float(value) / <span class="number">3.2808</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Distance</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="string">'''Class to represent distance holding two descriptors for feet and meters.'''</span></div><div class="line">	meter = Meter()</div><div class="line">	foot = Foot()</div><div class="line"></div><div class="line">d = Distance()</div><div class="line">d.meter		<span class="comment">#d.meter --&gt; Distance.__getattribute__('meter') --&gt; Meter.__get__(meter, d, Distance)  --&gt; meter.value --&gt; 0.0</span></div><div class="line">&gt;&gt;&gt;<span class="number">0.0</span></div><div class="line">d.foot</div><div class="line">&gt;&gt;&gt;<span class="number">0.0</span></div><div class="line"></div><div class="line">d.meter = <span class="number">100</span></div><div class="line"><span class="keyword">print</span> d.meter, d.foot</div><div class="line">&gt;&gt;&gt;(<span class="number">100</span>, <span class="number">3048.0370641306997</span>)</div><div class="line"></div><div class="line">d.foot = <span class="number">100</span></div><div class="line"><span class="keyword">print</span> d.meter, d.foot</div><div class="line">&gt;&gt;&gt;(<span class="number">30.480370641306997</span>,  <span class="number">100</span>)</div></pre></td></tr></table></figure>
-<p>或者作为装饰器修饰类的一个方法，改变其默认行为。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">memeto</span><span class="params">(obj, deep=False)</span>:</span></div><div class="line">	<span class="string">"""memeto is a decrotor to store the attributes"""</span></div><div class="line">	<span class="string">"""False == 0; True == 1"""</span></div><div class="line">	state = (copy.copy, copy.deepcopy)[deep](obj.__dict__)</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">restore</span><span class="params">()</span>:</span></div><div class="line">    	obj.__dict__.clear()</div><div class="line">    	obj.__dict__.update(state)</div><div class="line"></div><div class="line">	<span class="keyword">return</span> restore</div><div class="line"></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Transactional</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, method)</span>:</span></div><div class="line">    	self.method = method</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__get__</span><span class="params">(self, instance, owner)</span>:</span></div><div class="line">    	<span class="function"><span class="keyword">def</span> <span class="title">transaction</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">        	self.memeto = memeto(instance)</div><div class="line">        	<span class="keyword">try</span>:</div><div class="line">            	self.method(*args, **kwargs)</div><div class="line">        	<span class="keyword">except</span>:</div><div class="line">            	self.memeto()</div><div class="line"></div><div class="line">    	<span class="keyword">return</span> transaction</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">NumObj</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, v)</span>:</span></div><div class="line">    	self.value = v</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">increase</span><span class="params">(self)</span>:</span></div><div class="line">    	self.value += <span class="number">1</span></div><div class="line"></div><div class="line"><span class="meta">	@Transactional</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">DoStuff</span><span class="params">(self)</span>:</span></div><div class="line">    	self.value = <span class="string">'s'</span></div><div class="line">    	self.value += <span class="number">1</span>		<span class="comment">#will fail</span></div><div class="line">    	<span class="keyword">print</span> <span class="string">'error'</span></div><div class="line"></div><div class="line">n = NumObj(<span class="number">0</span>)</div><div class="line">n.DoStuff()</div><div class="line"><span class="keyword">print</span> n.value		<span class="comment">#value is restored by Transactional</span></div><div class="line">&gt;&gt;&gt;<span class="number">0</span></div></pre></td></tr></table></figure>
-<h2 id="利用-getattr-和setattr-缓存"><a href="#利用-getattr-和setattr-缓存" class="headerlink" title="利用__getattr__和setattr 缓存"></a>利用<code>__getattr__</code>和<code>setattr</code> 缓存</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Cache</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, real_name)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'through getattr to get attribute %r'</span> % real_name</div><div class="line">		value = str(real_name)</div><div class="line">		setattr(self, real_name, value)</div><div class="line">		<span class="keyword">return</span> value</div><div class="line"></div><div class="line">cache = Cache()</div><div class="line">cache.__dict__</div><div class="line">&gt;&gt;&gt;&#123;&#125;</div><div class="line"></div><div class="line">cache.a</div><div class="line">&gt;&gt;&gt;through getattr to get attribute <span class="string">'a'</span></div><div class="line">&gt;&gt;&gt;a</div><div class="line"></div><div class="line">cache.__dict__</div><div class="line">&gt;&gt;&gt;&#123;<span class="string">'a'</span>:<span class="string">'a'</span>&#125;</div><div class="line"></div><div class="line">cache.a</div><div class="line">&gt;&gt;&gt;a</div></pre></td></tr></table></figure>
-<p>第二次获取属性的时候没有通过 <code>__getattr__</code> 方法获取，直接获取的属性。</p>
-<h2 id="iter迭代器的妙用"><a href="#iter迭代器的妙用" class="headerlink" title="iter迭代器的妙用"></a>iter迭代器的妙用</h2><p>iter迭代器中的每个元素只会被迭代一次，可以通过<code>in</code>、<code>next</code>消耗。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 输出字符串中特殊字符的下一个字符</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">print_next_char</span><span class="params">(s, ch)</span>:</span></div><div class="line">	s_iter = iter(s)</div><div class="line">	<span class="keyword">for</span> c <span class="keyword">in</span> s_iter:</div><div class="line">		<span class="keyword">if</span> c == ch:</div><div class="line">			<span class="keyword">try</span>:</div><div class="line">				<span class="keyword">print</span> next(s_iter)</div><div class="line">			<span class="keyword">except</span> StopIteration:</div><div class="line">				<span class="keyword">pass</span></div><div class="line"></div><div class="line">print_next_char(<span class="string">'abadeac'</span>, <span class="string">'a'</span>)  <span class="comment"># b d c</span></div></pre></td></tr></table></figure>
-<p>通过slice函数对迭代器进行组合</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">i = iter([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>])</div><div class="line">zip(i, i)		<span class="comment"># [(1, 2), (3, 4)]</span></div><div class="line"></div><div class="line">i = iter([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>])</div><div class="line">zip(i, i, i)    <span class="comment"># [(1, 2, 3,)]</span></div></pre></td></tr></table></figure>
-<p>如果使用map函数，可以产生所有组合，不足的使用None补充</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">i = iter([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>])</div><div class="line">map(<span class="keyword">None</span>, i, i)	<span class="comment"># [(1, 2), (3, 4), (5, None)]</span></div></pre></td></tr></table></figure>
-<p>再结合<code>s[start:] = s[start:None]</code>的特性就可以输出给定序列的片段。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">print_slice</span><span class="params">(s, iss)</span>:</span></div><div class="line">	iter_is = iter(iss)</div><div class="line">	<span class="keyword">for</span> start, end <span class="keyword">in</span> map(<span class="keyword">None</span>, iter_is, iter_is):</div><div class="line">		<span class="keyword">print</span> s[start:end],</div><div class="line"></div><div class="line">print_slice(<span class="string">'abcde'</span>, [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">7</span>])  <span class="comment"># a cde</span></div></pre></td></tr></table></figure>
-<h2 id="flock超时函数（stackoverflow）"><a href="#flock超时函数（stackoverflow）" class="headerlink" title="flock超时函数（stackoverflow）"></a>flock超时函数（<a href="http://stackoverflow.com/questions/5255220/fcntl-flock-how-to-implement-a-timeout" target="_blank" rel="external">stackoverflow</a>）</h2><p>利用linux中IO堵塞模型中遇到信号返回EINTR，利用Python IO模型中不成功返回IOError</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> signal, errno</div><div class="line"><span class="keyword">from</span> contextlib <span class="keyword">import</span> contextmanager</div><div class="line"><span class="keyword">import</span> fcntl</div><div class="line"></div><div class="line"><span class="meta">@contextmanager</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">timeout</span><span class="params">(seconds)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">timeout_handler</span><span class="params">(signum, frame)</span>:</span></div><div class="line">        <span class="keyword">pass</span></div><div class="line"></div><div class="line">    original_handler = signal.signal(signal.SIGALRM, timeout_handler)</div><div class="line"></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        signal.alarm(seconds)</div><div class="line">        <span class="keyword">yield</span></div><div class="line">	<span class="comment"># 清理部分，获取或者超时都恢复信号</span></div><div class="line">    <span class="keyword">finally</span>:</div><div class="line">        signal.alarm(<span class="number">0</span>)</div><div class="line">        signal.signal(signal.SIGALRM, original_handler)</div><div class="line"></div><div class="line"><span class="keyword">with</span> timeout(<span class="number">1</span>):</div><div class="line">    f = open(<span class="string">"test.lck"</span>, <span class="string">"w"</span>)</div><div class="line">    <span class="keyword">try</span>:</div><div class="line">		<span class="comment"># 如果不能获取就堵塞</span></div><div class="line">        fcntl.flock(f.fileno(), fcntl.LOCK_EX)</div><div class="line">    <span class="keyword">except</span> IOError, e:</div><div class="line">		<span class="comment"># SIGALRM到达errno.EINTR产生， 其他报错</span></div><div class="line">        <span class="keyword">if</span> e.errno != errno.EINTR:</div><div class="line">            <span class="keyword">raise</span> e</div><div class="line">        <span class="keyword">print</span> <span class="string">"Lock timed out"</span></div></pre></td></tr></table></figure>
-<p>这段代码逻辑清楚，而且对获取锁、超时、其他异常的错误处理都很完美，并且体现了对linux和python都有很深的掌握</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2013/12/30/hello_world/" itemprop="url">
-                  你好，世界
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2013-12-30T00:00:00-08:00" content="2013-12-30">
-              2013-12-30
-            </time>
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2013/12/30/hello_world/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2013/12/30/hello_world/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="Helo-World"><a href="#Helo-World" class="headerlink" title="Helo,World:)"></a>Helo,World:)</h1><p><b> This is the first blog in github pages </b></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">hello</span><span class="params">()</span>:</span></div><div class="line">  print(<span class="string">'hello,github'</span>)</div></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/blog/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/blog/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/blog/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/blog/">1</a><span class="page-number current">2</span><a class="page-number" href="/blog/page/3/">3</a><a class="extend next" rel="next" href="/blog/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2748,7 +2764,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">30</span>
+              <span class="site-state-item-count">33</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
