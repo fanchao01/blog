@@ -227,7 +227,173 @@
             
   <section id="posts" class="posts-expands">
     
+       
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2015/01/18/python-tornado/" itemprop="url">
+                  tornado源码分析-1
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-18T00:00:00-08:00" content="2015-01-18">
+              2015-01-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/tornado/" itemprop="url" rel="index">
+                    <span itemprop="name">tornado</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/01/18/python-tornado/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/01/18/python-tornado/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
       
+      
+
+      
+        
+          
+            <p><img src="/blog/images/asyncingio.gif" alt="image"></p>
+<h3 id="一个简单的tornado应用实例"><a href="#一个简单的tornado应用实例" class="headerlink" title="一个简单的tornado应用实例"></a>一个简单的tornado应用实例</h3><hr>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> tornado.ioloop</div><div class="line"><span class="keyword">import</span> tornado.web</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainHandler</span><span class="params">(tornado.web.RequestHandler)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self)</span>:</span></div><div class="line">        self.write(<span class="string">"Hello, world"</span>)</div><div class="line"></div><div class="line">application = tornado.web.Application([</div><div class="line">    (<span class="string">r"/"</span>, MainHandler),</div><div class="line">])</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</div><div class="line">    application.listen(<span class="number">8888</span>)</div><div class="line">    tornado.ioloop.IOLoop.instance().start()</div></pre></td></tr></table></figure>
+<p>tornado框架以<code>Application</code>为入口，以<code>RequestHandler</code>为接口，以<code>IOLoop</code>为核心进行构建。上面的例子创建了一个简单的<code>Hello，World</code>程序。tornado以异步高性能为目的，采用异步非堵塞网络IO模型，低层利用<code>epoll</code>（linux平台），特别适合高性能长连接的应用场景。</p>
+<h3 id="异步非堵塞编程模型"><a href="#异步非堵塞编程模型" class="headerlink" title="异步非堵塞编程模型"></a><a href="http://www.tornadoweb.org/en/stable/guide/async.html" target="_blank" rel="external">异步非堵塞编程模型</a></h3><hr>
+<p>异步函数]，会在结束所有操作前就返回，其中的一些操作（特别是耗时间的IO操作）会交给后台去运行，这些操作完成后再触发应用中的其它函数逻辑。一般有4种类型的异步接口：</p>
+<ul>
+<li>回调参数。<br>通过参数传入callback等待完成后再进行最后的callback操作。<br><code>asynchronous_fetch-&gt;http_client.fetch-&gt;handle_respones-&gt;callback</code>，</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.httpclient <span class="keyword">import</span> AsyncHTTPClient</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">asynchronous_fetch</span><span class="params">(url, callback)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle_response</span><span class="params">(response)</span>:</span></div><div class="line">        callback(response.body)</div><div class="line">    http_client.fetch(url, callback=handle_response)</div></pre></td></tr></table></figure>
+<ul>
+<li>返回一个占位实例。<br>通过两个Future实例完成一步步的回调，事件通知或者订阅者-发布者模型。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.concurrent <span class="keyword">import</span> Future</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">async_fetch_future</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    my_future = Future()</div><div class="line">    fetch_future = http_client.fetch(url)</div><div class="line">    fetch_future.add_done_callback(</div><div class="line">        <span class="keyword">lambda</span> f: my_future.set_result(f.result()))</div><div class="line">    <span class="keyword">return</span> my_future</div></pre></td></tr></table></figure>
+<ul>
+<li><p>提交给队列。<br><code>nose.js</code>是这种模型，每个操作是一个事件提交给后台的其他线程库，完成后再交给主线程中的队列进行回调操作。</p>
+</li>
+<li><p>回调注册。<br><code>POSIX</code>信号是这种模型，通过注册回调函数。（这里我还不太清楚与回调参数有什么不同）</p>
+</li>
+</ul>
+<p>无论是哪种形式，异步模型都有一些通用逻辑，可以分为<code>堵塞前操作</code>，<code>堵塞操作</code>，<code>通知</code>，<code>堵塞后操作</code>。</p>
+<ul>
+<li><code>堵塞前操作</code>，立即完成的，发生在堵塞操作前的逻辑。</li>
+<li><code>堵塞操作</code>，堵塞操作，主要需要解决的部分。</li>
+<li><code>通知</code>，堵塞操作完成后，如何通知已经完成了堵塞操作</li>
+<li><code>堵塞后操作</code>，堵塞操作完成后的逻辑，一般处理堵塞操作的返回值。</li>
+</ul>
+<p>同步堵塞模型比较简单，所有逻辑操作都捆绑在一起，没有也不必进行<code>通知</code>。异步非堵塞模型需要重点处理<code>堵塞操作</code>和<code>通知</code>。一般的异步非堵塞使用callback模型，将<code>堵塞前操作</code>和<code>堵塞后逻辑</code>显式分开，通过向<code>堵塞操作</code>传递<code>堵塞后操作</code>进行<code>通知</code>机制（callback）。</p>
+<h3 id="tornado中的异步非堵塞模型"><a href="#tornado中的异步非堵塞模型" class="headerlink" title="tornado中的异步非堵塞模型"></a>tornado中的异步非堵塞模型</h3><hr>
+<p>tornado的异步接口利用Python的协程语法<code>yield</code>可以暂停操作，将<code>堵塞逻辑</code>、<code>通知</code>和<code>堵塞后操作</code>捆绑到一起，不用显式的拆分最大限度的保持和同步接口的一致性。通过<code>yield</code>让出<code>堵塞操作</code>交给<code>IOLoop</code>统一处理，再通过<code>Future</code>机制进行<code>通知</code>机制。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado <span class="keyword">import</span> gen</div><div class="line"></div><div class="line"><span class="meta">@gen.coroutine</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">fetch_coroutine</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()		<span class="comment"># 堵塞前操作</span></div><div class="line">    response = <span class="keyword">yield</span> http_client.fetch(url)	<span class="comment"># 堵塞操作</span></div><div class="line">    <span class="keyword">return</span> response.body	<span class="comment"># 堵塞后操作</span></div></pre></td></tr></table></figure>
+<p>tornado的异步堵塞模型低层采用<code>epoll</code>模型，通过（隐式）<code>Future</code>机制进行回调通知，通过<code>IOLoop</code>处理堵塞操作。简单的<code>IOLoop</code>逻辑示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Simplified inner loop of tornado.gen.Runner</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="comment"># send(x) makes the current yield return x.</span></div><div class="line">    <span class="comment"># It returns when the next yield is reached</span></div><div class="line">    future = self.gen.send(self.next) </div><div class="line">	<span class="comment"># 通过send 通知 协程进行 堵塞后操作</span></div><div class="line">	<span class="comment"># future衔接 堵塞前和堵塞后的逻辑</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">callback</span><span class="params">(f)</span>:</span></div><div class="line">        self.next = f.result()</div><div class="line">        self.run()</div><div class="line"></div><div class="line">    future.add_done_callback(callback)</div><div class="line">	<span class="comment"># 向future中注册辅助函数，进行回调后的通知</span></div></pre></td></tr></table></figure>
+<h3 id="tornado中核心类"><a href="#tornado中核心类" class="headerlink" title="tornado中核心类"></a>tornado中核心类</h3><hr>
+<p>tornado主要有两个核心类，<code>IOLoop</code>封装低层<code>epoll</code>集中处理堵塞操作。<code>iostream</code>封装<code>read、write</code>函数进行缓存和更方便的处理HTTP协议。具体分析稍后进行。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+       
 
   
   
@@ -356,7 +522,7 @@
 
 
     
-      
+       
 
   
   
@@ -502,7 +668,7 @@
 
 
     
-      
+       
 
   
   
@@ -664,7 +830,7 @@
 
 
     
-      
+       
 
   
   
@@ -816,7 +982,7 @@
 
 
     
-      
+       
 
   
   
@@ -1019,7 +1185,7 @@
 
 
     
-      
+       
 
   
   
@@ -1181,7 +1347,7 @@
 
 
     
-      
+       
 
   
   
@@ -1399,7 +1565,7 @@ undefined
 
 
     
-      
+       
 
   
   
@@ -1581,7 +1747,7 @@ undefined
 
 
     
-      
+       
 
   
   
@@ -1826,7 +1992,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
+       
 
   
   
@@ -1966,7 +2132,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
+       
 
   
   
@@ -2111,7 +2277,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
+       
 
   
   
@@ -2234,7 +2400,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
+       
 
   
   
@@ -2411,7 +2577,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
+       
 
   
   
@@ -2576,149 +2742,6 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2014/07/16/python中的多态/" itemprop="url">
-                  python中的多态
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-07-16T00:00:00-07:00" content="2014-07-16">
-              2014-07-16
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/python/" itemprop="url" rel="index">
-                    <span itemprop="name">python</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2014/07/16/python中的多态/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/07/16/python中的多态/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="何为多态？"><a href="#何为多态？" class="headerlink" title="何为多态？"></a>何为多态？</h2><hr>
-<p>按照松本行弘的说法，多态就是把不同种类的东西当做相同的东西来处理。多态（面向对象）的本质是消息传递。由编译器向实例传递不同的消息来使之进行不同的操作。消息体为传递的方法名、参数个数以及类型等。在没有多态的支持下编程类似这样:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">()</span>:</span></div><div class="line"><span class="keyword">if</span> arg <span class="keyword">is</span> type of TypeA:</div><div class="line">    ...</div><div class="line"><span class="keyword">elif</span> arg <span class="keyword">is</span> type of TypeB:</div><div class="line">    ...</div><div class="line"><span class="keyword">else</span>:</div><div class="line">    ...</div></pre></td></tr></table></figure>
-<p>如果存在多态，编程类似这样</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(TypeA arg)</span>:</span></div><div class="line">    ...</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(TypeB arg)</span>:</span></div><div class="line">    ...</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(TypeA arga, TypeB argb)</span>:</span></div><div class="line">    ...</div></pre></td></tr></table></figure>
-<p>由编译器来自动将参数arg分派给正确的方法进行调用。</p>
-<h2 id="python中的多态？"><a href="#python中的多态？" class="headerlink" title="python中的多态？"></a>python中的多态？</h2><hr>
-<p>从上面的例子可以看到，要想支持多态需要python解释器能够区分不同类型的参数(参数的个数比较好容易区别)。<br>而动态语言要想做到这一点比较困难(如果做到这一点就不是动态语言了)。所以，python是不支持完整的多态的(可以利用语法部分实现多态的功能)。</p>
-<h2 id="如何实现类似多态的支持？"><a href="#如何实现类似多态的支持？" class="headerlink" title="如何实现类似多态的支持？"></a>如何实现类似多态的支持？</h2><hr>
-<p>python支持duck typing和多参数，所以部分补偿了不支持多态的问题(按照python老爹的说法，多态不是程序员真正需要的)。当然，多态是语法糖果，即使没有多态也能完成程序。不过在这里只讨论实现类似多态的办法，即方法名相同，不同类型和参数个数的调用。</p>
-<ul>
-<li><strong>方法之一，使用<code>if...elif...else</code> 和 <code>*args</code></strong></li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Poly</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self, *args)</span>:</span> <span class="comment">#def method(self, arga=None, argb=None)</span></div><div class="line">        arga = args.get(<span class="string">'arga'</span>, <span class="keyword">None</span>)</div><div class="line">        argb = args.get(<span class="string">'argb'</span>, <span class="keyword">None</span>)</div><div class="line">        <span class="keyword">if</span> arga <span class="keyword">and</span> argb:</div><div class="line">            ...</div><div class="line">        <span class="keyword">elif</span> arga:</div><div class="line">            ...</div><div class="line">        <span class="keyword">elif</span> argb:</div><div class="line">            ...</div></pre></td></tr></table></figure>
-<p>即利用 <code>*args</code> 不定参数来实现 或者</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Poly</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self, arg)</span>:</span></div><div class="line">        <span class="keyword">if</span> type(arg) == TypeA:</div><div class="line">            ....</div><div class="line">        <span class="keyword">elif</span> type(arg) == TypeB:</div><div class="line">            ....</div></pre></td></tr></table></figure>
-<p>显式进行类型判断再分派(不是好的办法）。</p>
-<ul>
-<li><strong>方法二, 使用设计模式。将对不同对象(类型）的操作隐藏在操作对象中。</strong></li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Context</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self, obj)</span>:</span></div><div class="line">        obj.op(self)</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArgA</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">op</span><span class="params">(self, context)</span>:</span></div><div class="line">        ....</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArgB</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">op</span><span class="params">(self, context)</span>:</span></div><div class="line">        ...</div></pre></td></tr></table></figure>
-<p>将操作隐含在对象本身中。 因为类似<code>策略模式</code>所以使用了Context来表明类名称。但是，这种方法不支持不定参数个数的多态。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><hr>
-<p>在python中使用多态不是一种好的编程方法。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2764,7 +2787,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">33</span>
+              <span class="site-state-item-count">34</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
