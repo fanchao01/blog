@@ -248,6 +248,146 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2015/01/19/python-tornado-utils/" itemprop="url">
+                  tornado中一些通用的函数和类
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-19T00:00:00-08:00" content="2015-01-19">
+              2015-01-19
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/tornado/" itemprop="url" rel="index">
+                    <span itemprop="name">tornado</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/01/19/python-tornado-utils/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/01/19/python-tornado-utils/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id=""><a href="#" class="headerlink" title=" "></a> </h3><hr>
+<p>本篇记录tornado源代码阅读过程中一些有意思的函数和类等，偏向于python编程技巧语法等。</p>
+<h3 id="ObjectDict"><a href="#ObjectDict" class="headerlink" title="ObjectDict"></a>ObjectDict</h3><hr>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ObjectDict</span><span class="params">(dict)</span>:</span></div><div class="line">    <span class="string">"""Makes a dictionary behave like an object, with attribute-style access.</span></div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">return</span> self[name]</div><div class="line">        <span class="keyword">except</span> KeyError:</div><div class="line">            <span class="keyword">raise</span> AttributeError(name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setattr__</span><span class="params">(self, name, value)</span>:</span></div><div class="line">        self[name] = value</div><div class="line"></div><div class="line">od = ObjectDict()</div><div class="line">od.a = <span class="number">1</span></div><div class="line">od[<span class="string">'a'</span>]		<span class="comment"># 1</span></div><div class="line">od.a		<span class="comment"># 1</span></div></pre></td></tr></table></figure>
+<h3 id="import-object"><a href="#import-object" class="headerlink" title="import_object"></a>import_object</h3><hr>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">import_object</span><span class="params">(name)</span>:</span></div><div class="line">    <span class="string">"""Imports an object by name.</span></div><div class="line"></div><div class="line">    import_object('x') is equivalent to 'import x'.</div><div class="line">    import_object('x.y.z') is equivalent to 'from x.y import z'.</div><div class="line"></div><div class="line">    &gt;&gt;&gt; import tornado.escape</div><div class="line">    &gt;&gt;&gt; import_object('tornado.escape') is tornado.escape</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado.escape.utf8') is tornado.escape.utf8</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado') is tornado</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado.missing_module')</div><div class="line">    Traceback (most recent call last):</div><div class="line">        ...</div><div class="line">    ImportError: No module named missing_module</div><div class="line">    """</div><div class="line">    <span class="keyword">if</span> name.count(<span class="string">'.'</span>) == <span class="number">0</span>:</div><div class="line">        <span class="keyword">return</span> __import__(name, <span class="keyword">None</span>, <span class="keyword">None</span>)</div><div class="line"></div><div class="line">    parts = name.split(<span class="string">'.'</span>)</div><div class="line">    obj = __import__(<span class="string">'.'</span>.join(parts[:<span class="number">-1</span>]), <span class="keyword">None</span>, <span class="keyword">None</span>, [parts[<span class="number">-1</span>]], <span class="number">0</span>)</div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">return</span> getattr(obj, parts[<span class="number">-1</span>])</div><div class="line">    <span class="keyword">except</span> AttributeError:</div><div class="line">        <span class="keyword">raise</span> ImportError(<span class="string">"No module named %s"</span> % parts[<span class="number">-1</span>])</div></pre></td></tr></table></figure>
+<p>比<code>importlib.import_module</code>更加方便，<code>import_object</code>可以直接导入模块或者属性，而前者只能导入模块。另外注意两个函数都是将导入的对象返回，而不是将其暴露在当前域名中， 和<code>import</code>有差距。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">import_object(<span class="string">'os'</span>)</div><div class="line">os	<span class="comment">#NameError</span></div><div class="line"></div><div class="line">path_exists = import_object(<span class="string">'os.path.exists'</span>)</div><div class="line"><span class="comment"># from  os.path import exists as path_exists</span></div><div class="line"></div><div class="line"><span class="comment">####################</span></div><div class="line">mypath = importlib.import_module(<span class="string">'.path'</span>, <span class="string">'os'</span>)</div><div class="line"><span class="comment"># from os import path as mypath</span></div></pre></td></tr></table></figure>
+<p>### </p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+       
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2015/01/18/python-tornado/" itemprop="url">
                   tornado源码分析-1
                 </a>
@@ -2577,171 +2717,6 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-       
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2014/07/17/python_decorator/" itemprop="url">
-                  Python Decorator 装饰器
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-07-17T00:00:00-07:00" content="2014-07-17">
-              2014-07-17
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/python/" itemprop="url" rel="index">
-                    <span itemprop="name">python</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2014/07/17/python_decorator/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/07/17/python_decorator/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="何为装饰器？"><a href="#何为装饰器？" class="headerlink" title="何为装饰器？"></a>何为装饰器？</h2><hr>
-<p>装饰器(decorator)是一种语法糖，需要编程语言支持闭包和first-class函数闭包（提供局部变量支持，first-class函数允许将函数作为参数和任意地方创建函数）。装饰器简单来说就是装饰一个函数（对象），在调用之前或者之后附加点操作逻辑，类似下面的逻辑。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">do_something</span><span class="params">()</span>:</span></div><div class="line">	<span class="comment">#do_something</span></div><div class="line"></div><div class="line">==&gt;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">do_something</span><span class="params">()</span>:</span></div><div class="line">	pre_do_something	<span class="comment">#装饰器附加操作</span></div><div class="line">	do_something</div><div class="line">	post_do_somthding	<span class="comment">#装饰器附件操作</span></div></pre></td></tr></table></figure>
-<h2 id="如果没有装饰器语法如何实现相同功能"><a href="#如果没有装饰器语法如何实现相同功能" class="headerlink" title="如果没有装饰器语法如何实现相同功能?"></a>如果没有装饰器语法如何实现相同功能?</h2><hr>
-<p>如果没有装饰器语法的支持，我们可以用现有的语法实现。例如：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator</span><span class="params">(func)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">	<span class="keyword">return</span> wrapper</div><div class="line">	</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wrapped</span><span class="params">(arg)</span>:</span></div><div class="line">	<span class="keyword">print</span> arg</div><div class="line"></div><div class="line">wrapped = decorator(wrapped)</div><div class="line">wrapped(<span class="string">'hello,world'</span>)</div><div class="line"></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>hello,world</div><div class="line">	</div><div class="line">wrapped.__name__</div><div class="line">&gt;&gt;&gt;<span class="string">'wrapper'</span></div></pre></td></tr></table></figure>
-<p>上面的逻辑比较简单。以<code>wrapped</code>为参数调用<code>decorator</code>，返回一个<code>wrapper</code>函数，再赋值给<code>wrapped</code>名字。表面看<code>wrapped</code>没有改变，其实际内容已经被替换成<code>wrapper</code>这个闭包。有了装饰器语法糖的支持，我们可以简写成:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@decorator</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wrapped</span><span class="params">(arg)</span>:</span></div><div class="line">	<span class="keyword">print</span> arg</div></pre></td></tr></table></figure>
-<p>python解释器负责调用<code>decorator(wrapped)</code>再赋值给<code>wrapped</code>名字的过程。当然上面的例子比较简单，并没有做一些额外的工作，可以稍微修改一下。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">def decorator(func)</div><div class="line">	def wrapper(*args, **kwarg):</div><div class="line">		args = tuple(s.title() for s in args)</div><div class="line">		return func(*args, **kwargs)</div><div class="line">	return wrapper</div><div class="line"></div><div class="line">wrapped('hello,world')</div><div class="line">&gt;&gt;&gt;'Hello,world'</div></pre></td></tr></table></figure>
-<h2 id="函数如何使用装饰器？"><a href="#函数如何使用装饰器？" class="headerlink" title="函数如何使用装饰器？"></a>函数如何使用装饰器？</h2><hr>
-<p>上面的例子已经给出如何使用装饰器的方式，即在被装饰函数的前面加上<code>@decorator</code>。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator</span><span class="params">(func)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(name)</span>:</span></div><div class="line">	<span class="keyword">return</span> func(<span class="string">' '</span>.join(name, <span class="string">'are a dog'</span>))</div><div class="line"><span class="keyword">return</span> wrapper</div><div class="line"></div><div class="line"><span class="meta">@decorator</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">echo_name</span><span class="params">(name)</span>:</span></div><div class="line">	<span class="keyword">print</span> name</div><div class="line"></div><div class="line">echo_name(<span class="string">'you'</span>)</div><div class="line">&gt;&gt; <span class="string">'you are a dog'</span></div></pre></td></tr></table></figure>
-<h2 id="如何使用多装饰器？"><a href="#如何使用多装饰器？" class="headerlink" title="如何使用多装饰器？"></a>如何使用多装饰器？</h2><hr>
-<p>python解释器负责从底向上调用装饰器赋值，因此可以写为</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@decorator_2</span></div><div class="line"><span class="meta">@decorator_1</span></div><div class="line"><span class="meta">@decorator_0</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">()</span>:</span></div><div class="line">	<span class="keyword">pass</span></div></pre></td></tr></table></figure>
-<p>即按照装饰的顺序由下向上调用。类似<code>func = decorator_2(decorator_1(decorator_0(func)))</code></p>
-<h2 id="如何给装饰器转入参数"><a href="#如何给装饰器转入参数" class="headerlink" title="如何给装饰器转入参数"></a>如何给装饰器转入参数</h2><hr>
-<p>从前面看，装饰器要求最后能够返回一个函数。这个函数接受唯一的参数func即可。因此实现装饰器传入参数有几种办法。第一种，多层嵌套，装饰器本身接受参数后，再返回一个装饰器即可。当然，为了利用转入装饰器的参数，需要把参数再继续传递下去。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator_outer</span><span class="params">(arg)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">decorator_inner</span><span class="params">(func, arg=arg)</span>:</span></div><div class="line">		<span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">			args = args + (arg,)</div><div class="line">			<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">		<span class="keyword">return</span> inner</div><div class="line">	<span class="keyword">return</span> decorator_inner</div></pre></td></tr></table></figure>
-<p>第二种，利用类实现参数。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">decorator</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, arg)</span>:</span></div><div class="line">		self.arg = arg</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> self.func(*args, **kwarg)</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, func)</span>:</span></div><div class="line">		self.func = func</div><div class="line">		<span class="keyword">return</span> self.inner</div></pre></td></tr></table></figure>
-<p>利用类实现实际上是手工编写了一个闭包，再利用<code>__call__</code>魔术方法将类当做函数运行。</p>
-<p>第三种，利用functools.partial 将嵌套扁平化。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">import functools</div><div class="line"></div><div class="line">def decorator(d_arg)</div><div class="line">	def inner(func, *args, **kwargs):</div><div class="line">		args = args + kwargs.get('d_arg', ()) </div><div class="line">		return func(*args, **kwargs)</div><div class="line">	return functools.partial(inner, d_arg=d_arg)</div></pre></td></tr></table></figure>
-<p>partial叫做函数的柯西化，即将多参数分阶段传入，等待传入最后一个参数才运行的技术。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">(a, b, c)</span>:</span></div><div class="line">	<span class="keyword">print</span> a,b,c</div><div class="line"></div><div class="line">func = partial(func, a=<span class="number">1</span>)</div><div class="line">func = partial(func, b=<span class="number">2</span>)</div><div class="line">func = partial(func, c=<span class="number">3</span>)</div><div class="line">func()</div><div class="line">&gt;&gt;&gt;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span></div></pre></td></tr></table></figure>
-<h2 id="装饰器的优点？"><a href="#装饰器的优点？" class="headerlink" title="装饰器的优点？"></a>装饰器的优点？</h2><hr>
-<p>可以不改变函数名称和参数的情况下实现额外的功能。因为可以在不改变原有逻辑和代码的情况下附加功能，可以实现相同前置/后置逻辑的抽象。</p>
-<p>python本身利用装饰器语法实现了很多功能。例如: @classmethod 实现类方法，@staticmethod实现类的静态方法。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Klass</span><span class="params">(object)</span>:</span></div><div class="line"><span class="meta">	@classmethod</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(cls)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'classmethod'</span></div><div class="line"></div><div class="line"><span class="meta">	@staticmethod:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">echo</span><span class="params">()</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'staticmethod'</span></div><div class="line"></div><div class="line"><span class="meta">	@property</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">value</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">if</span> self._value &lt; <span class="number">1</span>: </div><div class="line">			<span class="keyword">return</span> <span class="number">0</span></div><div class="line">		<span class="keyword">else</span>:</div><div class="line">			<span class="keyword">return</span> self._value</div></pre></td></tr></table></figure>
-<p>还有例如用 @property 装饰器将类方法转成类属性(如上所示)等。编程中可以将所有函数均要做的逻辑抽象为一个装饰器，以此避免代码的重复。例如django中的<code>@login_required</code>函数用来在调用view之前先验证当前请求的用户是否登录。</p>
-<h2 id="装饰器的缺点？"><a href="#装饰器的缺点？" class="headerlink" title="装饰器的缺点？"></a>装饰器的缺点？</h2><hr>
-<p>装饰器也有缺点，例如上例中的<code>wrapped.__name__</code>返回的并不是<code>wrapped</code>这个名字而是<code>wrapper</code>。这是因为<code>wrapped</code>本身被替换成了一个<code>wrapper</code>闭包，所以返回的是这个闭包的各种属性，可以通过<code>wrapped.func_closure</code>等func_xx函数查看。这叫做装饰器的副作用(side affect)。因此如果原来调用wrapped的逻辑，需要用到这些属性(包括<code>__doc__</code>，<code>__name__</code>,<code>__module__</code>等），那么这些逻辑就会出错。</p>
-<h3 id="如何解决装饰器的副作用"><a href="#如何解决装饰器的副作用" class="headerlink" title="如何解决装饰器的副作用?"></a>如何解决装饰器的副作用?</h3><p>明白了装饰器的副作用的原因，我们就可以手动解决一下。将闭包的属性赋值为被装饰的函数的属性即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator</span><span class="params">(func)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">	wrapper.__name__ = func.__name__</div><div class="line">	wrapper.__doc__ = func.__doc__</div><div class="line">	wrapper.__module__ = func.__module__</div><div class="line">	<span class="keyword">return</span> _wraps</div><div class="line"></div><div class="line"><span class="meta">@decorator</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wrapped</span><span class="params">(var)</span>:</span></div><div class="line">	<span class="keyword">print</span> var</div><div class="line"></div><div class="line">wrapped.__name__</div><div class="line">wrapped.__doc__</div><div class="line">wrapped.__module__</div><div class="line">&gt;&gt;&gt;<span class="string">'wrapped'</span></div><div class="line">&gt;&gt;&gt;<span class="string">''</span></div><div class="line">&gt;&gt;&gt;<span class="string">'__main__'</span></div></pre></td></tr></table></figure>
-<p>在装饰器中直接将装饰器的属性改为被装饰的对象的属性即可。</p>
-<p>仔细看可以见到这种技巧的本质，是在装饰器中的<code>wrapper</code>函数之后干了点事情，当然可以写一个通用的<strong>装饰<code>wrapper</code>的装饰器</strong>来代替手工赋值。最后实现的类似这样：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator</span><span class="params">(func)</span>:</span></div><div class="line"><span class="meta">	@wraps(func)</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">	<span class="keyword">return</span> wrapper</div></pre></td></tr></table></figure>
-<p>利用一个装饰器来完成<code>wrapper.__name__ = func.__name__</code>的工作。因为需要func的属性值，因此这个装饰器需要传入func参数。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wraps</span><span class="params">(wrapped)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(func, wrapped=wrapped)</span>:</span></div><div class="line">		<span class="function"><span class="keyword">def</span> <span class="title">_inner</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">			<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">		_inner.__name__ == wrapped.__name__</div><div class="line">	<span class="keyword">return</span> inner</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">decorator</span><span class="params">(func)</span>:</span></div><div class="line"><span class="meta">	@wraps(func)   #包装wrapper替换其属性</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">		args = (s.title() <span class="keyword">for</span> s <span class="keyword">in</span> args)</div><div class="line">		<span class="keyword">return</span> func(*args, **kwargs)</div><div class="line">	<span class="keyword">return</span> wrapper</div><div class="line"></div><div class="line"><span class="meta">@decorator</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wrapped</span><span class="params">(var)</span>:</span></div><div class="line">	<span class="keyword">print</span> var</div><div class="line">	</div><div class="line">wrapped.__name__</div><div class="line">&gt;&gt;&gt;<span class="string">'wrapped'</span></div></pre></td></tr></table></figure>
-<p>可以看见最终<code>wraps</code>函数实现了<code>functools.wraps</code>的功能。</p>
-<p>当然<code>wraps</code>有两点不够好：第一点是两层的<code>_inner</code>和<code>inner</code>看起来比较难于理解；第二点，如果被装饰对象是一个类，那么类的属性将丢失。对于第一点，通过利用functools.partial将多层嵌套扁平化。对于第二点比较好解决，将类的<code>__dict__</code>属性同样赋值给闭包即可，因此增加updated参数实现要将哪些属性更新。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">WRAPPER_ASSIGNMENT = (<span class="string">'__module'</span>, <span class="string">'__name__'</span>, <span class="string">'__doc__'</span>)</div><div class="line">WRAPPER_UPDATES = (<span class="string">'__dict__'</span>)</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_wrapper</span><span class="params">(wrapper, wrapped,</span></span></div><div class="line">                   assigned=WRAPPER_ASSIGNMENT, </div><div class="line">                   updated=WRAPPER_UPDATES):</div><div class="line">	<span class="keyword">for</span> attr <span class="keyword">in</span> assigned:</div><div class="line">		setattr(wrapper, getattr(wrapped, attr))</div><div class="line">	<span class="keyword">for</span> attr <span class="keyword">in</span> updated:</div><div class="line">		getattr(wrapper, attr).update(getattr(wrapped, attr, &#123;&#125;))</div><div class="line">	<span class="keyword">return</span> wrapper</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wraps</span><span class="params">(wrapped, </span></span></div><div class="line">          assigned=WRAPPER_ASSIGNMENT,   </div><div class="line">          updated=WRAPPER_UPDATES):</div><div class="line">	<span class="keyword">return</span> functools.partial(update_wrapper,</div><div class="line">                             wrapped=wrapped, </div><div class="line">                             assigned=assigned,</div><div class="line">                             updated=updated)</div></pre></td></tr></table></figure>
-<p>这个<code>wraps</code>就是函数<code>functools.wraps</code>的实现，与传统的写法的不同点是将内部的<code>update_wrapper</code>写在了外面。<code>wraps</code>函数返回了一个这样的函数<code>update_wrapper</code>，这个函数的一些参数都已经给定，只剩下<code>wrapper</code>等待传入。</p>
-<p>另外需要说明的是，partial函数是由C语言低层实现，不会修改update_wrapper的各种属性。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2787,7 +2762,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">34</span>
+              <span class="site-state-item-count">35</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
