@@ -1,0 +1,672 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Blog My Minds" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="（将一年之前解决的问题再梳理下）
+背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
+
+在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="10X优化glance镜像下载速率">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2016/10/28/openstack-将glance的下载速度加快10倍/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="（将一年之前解决的问题再梳理下）
+背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
+
+在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/openstack_glance_flow.jpg">
+<meta property="og:updated_time" content="2016-10-31T04:05:30.370Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="10X优化glance镜像下载速率">
+<meta name="twitter:description" content="（将一年之前解决的问题再梳理下）
+背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
+
+在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/openstack_glance_flow.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2016/10/28/openstack-将glance的下载速度加快10倍/"/>
+
+  <title> 10X优化glance镜像下载速率 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                10X优化glance镜像下载速率
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-10-28T00:00:00-07:00" content="2016-10-28">
+              2016-10-28
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/openstack/" itemprop="url" rel="index">
+                    <span itemprop="name">openstack</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/10/28/openstack-将glance的下载速度加快10倍/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/10/28/openstack-将glance的下载速度加快10倍/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>（将一年之前解决的问题再梳理下）</p>
+<h2 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h2><p>Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。</p>
+<p><img src="/blog/images/openstack_glance_flow.jpg" alt="img"></p>
+<p>在用<code>sheepdog</code>作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是<code>oslo_concurrency</code>与<code>evenlet</code>库不太匹配，导致数据在上图的管道中传输很慢造成的。</p>
+<h2 id="简单的例子"><a href="#简单的例子" class="headerlink" title="简单的例子"></a>简单的例子</h2><p>为了去除<code>glance</code>服务其他代码的描述，可以将问题简化为使用<code>oslo_concurrency</code>下载本地文件，实验代码如下。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> time</div><div class="line"><span class="keyword">import</span> eventlet</div><div class="line"><span class="comment"># eventlet.monkey_patch()  # [1] 不使用eventlet  [2] 去掉注释使用eventlet</span></div><div class="line"></div><div class="line"><span class="keyword">from</span> oslo_concurrency <span class="keyword">import</span> processutils</div><div class="line"></div><div class="line"></div><div class="line">start = time.time()</div><div class="line">data = processutils.execute(<span class="string">'cat /home/datafile'</span>, shell=<span class="keyword">True</span>)[<span class="number">0</span>]</div><div class="line">end = time.time()</div><div class="line"></div><div class="line"><span class="keyword">print</span> <span class="string">'time: %f, data: %dM， speed: %d'</span> % (end-start, len(data)/<span class="number">1024</span>/<span class="number">1024</span>, len(data)/<span class="number">1024</span>/<span class="number">1024</span>/(end-start))</div></pre></td></tr></table></figure>
+<p>分别执行[1][2]以及优化后的代码[3]</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">[root@<span class="built_in">test</span>]<span class="comment"># python load.py                     # [1]</span></div><div class="line">time: 2.553961, data: 200M, speed: 78 M/s</div><div class="line"></div><div class="line">[root@<span class="built_in">test</span>]<span class="comment"># python load.py                     # [2]</span></div><div class="line">time: 15.442971, data: 200M, speed: 12 M/s</div><div class="line"></div><div class="line">[root@<span class="built_in">test</span>]<span class="comment"># python load.py                     # [3] 使用eventlet并优化代码后的测试</span></div><div class="line">time: 2.685989, data: 200M, speed: 74 M/s</div></pre></td></tr></table></figure>
+<p>可以看到使用<code>eventlet</code>后速率降低到原来的1/6~1/7。优化代码后依旧使用<code>eventlet</code>，效率与不使用<code>eventlet</code>时基本持平，性能没有损耗。</p>
+<p>在分析代码之前需要牢记一点。因为使用<code>eventlet</code>会导致相关模块都会被<code>patch</code>成<code>eventlet</code>对应的模块。而<code>evenlet</code>中对应模块的类又会继承原始Python模块中的类。所以，如果查看相关类的方法时，需先从<code>eventlet</code>对应的模块中的类中查找；如果找不到则到Python原始模块中查找。例如<code>subprocess</code>模块。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment"># eventlet/green/subprocess.py    # 被替换后的eventlet中的subprocess模块</span></div><div class="line"></div><div class="line"><span class="comment"># eventlet中的类继承原始subprocess中的Popen类</span></div><div class="line"><span class="comment"># 重载和封装对应的方法和属性</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Popen</span><span class="params">(subprocess_orig.Popen)</span>:</span>  </div><div class="line">    <span class="string">"""eventlet-friendly version of subprocess.Popen"""</span></div><div class="line">    <span class="comment"># We do not believe that Windows pipes support non-blocking I/O. At least,</span></div><div class="line">    <span class="comment"># the Python file objects stored on our base-class object have no</span></div><div class="line">    <span class="comment"># setblocking() method, and the Python fcntl module doesn't exist on</span></div><div class="line">    <span class="comment"># Windows. (see eventlet.greenio.set_nonblocking()) As the sole purpose of</span></div><div class="line">    <span class="comment"># this __init__() override is to wrap the pipes for eventlet-friendly</span></div><div class="line">    <span class="comment"># non-blocking I/O, don't even bother overriding it on Windows.</span></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> subprocess_orig.mswindows:</div><div class="line">        <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, args, bufsize=<span class="number">0</span>, *argss, **kwds)</span>:</span></div><div class="line">            self.args = args</div><div class="line">            <span class="comment"># Forward the call to base-class constructor</span></div><div class="line">            <span class="comment"># 调用原始的类初始化</span></div><div class="line">            <span class="comment"># self.stdout 设置为上图中管道的父进程的读端</span></div><div class="line">            <span class="comment"># self.stdin 设置为上图中管道的父进程的写端</span></div><div class="line">            subprocess_orig.Popen.__init__(self, args, <span class="number">0</span>, *argss, **kwds)  </div><div class="line">            <span class="comment"># Now wrap the pipes, if any. This logic is loosely borrowed from</span></div><div class="line">            <span class="comment"># eventlet.processes.Process.run() method.</span></div><div class="line">            <span class="keyword">for</span> attr <span class="keyword">in</span> <span class="string">"stdin"</span>, <span class="string">"stdout"</span>, <span class="string">"stderr"</span>:</div><div class="line">                pipe = getattr(self, attr)</div><div class="line">                <span class="comment"># 再次使用eventlet中的GreenPipe封装原始的pipe</span></div><div class="line">                <span class="keyword">if</span> pipe <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span> <span class="keyword">not</span> type(pipe) == greenio.GreenPipe:</div><div class="line">                    wrapped_pipe = greenio.GreenPipe(pipe, pipe.mode, bufsize)</div><div class="line">                    setattr(self, attr, wrapped_pipe)</div><div class="line">        __init__.__doc__ = subprocess_orig.Popen.__init__.__doc__</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">wait</span><span class="params">(self, timeout=None, check_interval=<span class="number">0.01</span>)</span>:</span></div><div class="line">        <span class="comment"># Instead of a blocking OS call, this version of wait() uses logic</span></div><div class="line">        <span class="comment"># borrowed from the eventlet 0.2 processes.Process.wait() method.</span></div><div class="line">        <span class="keyword">if</span> timeout <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">            endtime = time.time() + timeout</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">                status = self.poll()</div><div class="line">                <span class="keyword">if</span> status <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">                    <span class="keyword">return</span> status</div><div class="line">                <span class="keyword">if</span> timeout <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span> time.time() &gt; endtime:</div><div class="line">                    <span class="keyword">raise</span> TimeoutExpired(self.args, timeout)</div><div class="line">                eventlet.sleep(check_interval)</div><div class="line">        <span class="keyword">except</span> OSError <span class="keyword">as</span> e:</div><div class="line">            <span class="keyword">if</span> e.errno == errno.ECHILD:</div><div class="line">                <span class="comment"># no child process, this happens if the child process</span></div><div class="line">                <span class="comment"># already died and has been cleaned up</span></div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span></div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                <span class="keyword">raise</span></div><div class="line">    wait.__doc__ = subprocess_orig.Popen.wait.__doc__</div><div class="line"></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> subprocess_orig.mswindows:</div><div class="line">        <span class="comment"># don't want to rewrite the original _communicate() method, we</span></div><div class="line">        <span class="comment"># just want a version that uses eventlet.green.select.select()</span></div><div class="line">        <span class="comment"># instead of select.select().</span></div><div class="line">        _communicate = FunctionType(</div><div class="line">            six.get_function_code(six.get_unbound_function(</div><div class="line">                subprocess_orig.Popen._communicate)),</div><div class="line">            globals())</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            _communicate_with_select = FunctionType(</div><div class="line">                six.get_function_code(six.get_unbound_function(</div><div class="line">                    subprocess_orig.Popen._communicate_with_select)),</div><div class="line">                globals())</div><div class="line">            _communicate_with_poll = FunctionType(</div><div class="line">                six.get_function_code(six.get_unbound_function(</div><div class="line">                    subprocess_orig.Popen._communicate_with_poll)),</div><div class="line">                globals())</div><div class="line">        <span class="keyword">except</span> AttributeError:</div><div class="line">            <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="comment"># Borrow subprocess.call() and check_call(), but patch them so they reference</span></div><div class="line"><span class="comment"># OUR Popen class rather than subprocess.Popen.</span></div><div class="line">call = FunctionType(six.get_function_code(subprocess_orig.call), globals())</div><div class="line">check_call = FunctionType(six.get_function_code(subprocess_orig.check_call), globals())</div></pre></td></tr></table></figure>
+<p>下面回过头重新梳理<code>glance</code>中拉取数据的代码逻辑。</p>
+<h2 id="subprocess惹的祸"><a href="#subprocess惹的祸" class="headerlink" title="subprocess惹的祸"></a>subprocess惹的祸</h2><hr>
+<p><code>oslo_concurrency</code>使用了<code>subprocess</code>中的<code>Popen</code>类并且通过其中的<code>communicate</code>方法来进行管道的通信。大致逻辑如下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> oslo_concurrency <span class="keyword">import</span> processutils</div><div class="line"></div><div class="line">processutils.execute(<span class="string">'cat datafile'</span>, shell=<span class="keyword">True</span>)  <span class="comment"># </span></div><div class="line"></div><div class="line"><span class="comment"># 调用该方法，此时该模块和方法已经被eventlet pacth</span></div><div class="line"><span class="comment"># 所以这个是eventlet中subprocess的Popen类</span></div><div class="line"></div><div class="line"><span class="comment"># 如何创建管道和fork子进程、以及子进程启动shell执行命令等过程忽略</span></div><div class="line">obj = subprocess.Popen(cmd,</div><div class="line">                       stdin=_PIPE,</div><div class="line">                       stdout=_PIPE,</div><div class="line">                       stderr=_PIPE,</div><div class="line">                       close_fds=close_fds,</div><div class="line">                       preexec_fn=on_preexec_fn,</div><div class="line">                       shell=shell,</div><div class="line">                       cwd=cwd,</div><div class="line">                       env=env_variables)</div><div class="line"><span class="comment"># 与这个管道通信获取返回的数据</span></div><div class="line"><span class="keyword">return</span> obj.communicate()[<span class="number">0</span>]</div></pre></td></tr></table></figure>
+<p>通过之前<code>eventlet</code>中的<code>subprocess</code>的<code>Popen</code>类的代码，我们知道<code>communicate</code>是原始<code>subprocess</code>的<code>communicate</code>方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 原始subprocess中的Popen类的communicate方法</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Popen</span><span class="params">(object)</span>:</span></div><div class="line">    ....</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">communicate</span><span class="params">(self, input=None)</span>:</span></div><div class="line">        <span class="string">"""Interact with process: Send data to stdin.  Read data from</span></div><div class="line">        stdout and stderr, until end-of-file is reached.  Wait for</div><div class="line">        process to terminate.  The optional input argument should be a</div><div class="line">        string to be sent to the child process, or None, if no data</div><div class="line">        should be sent to the child.</div><div class="line"></div><div class="line">        communicate() returns a tuple (stdout, stderr)."""</div><div class="line"></div><div class="line">        <span class="comment"># Optimization: If we are only using one pipe, or no pipe at</span></div><div class="line">        <span class="comment"># all, using select() or threads is unnecessary.</span></div><div class="line">        <span class="comment"># 由于只有stdout参数，所以跳过该逻辑</span></div><div class="line">        <span class="keyword">if</span> [self.stdin, self.stdout, self.stderr].count(<span class="keyword">None</span>) &gt;= <span class="number">2</span>:</div><div class="line">            stdout = <span class="keyword">None</span></div><div class="line">            stderr = <span class="keyword">None</span></div><div class="line">            <span class="keyword">if</span> self.stdin:</div><div class="line">                <span class="keyword">if</span> input:</div><div class="line">                    <span class="keyword">try</span>:</div><div class="line">                        self.stdin.write(input)</div><div class="line">                    <span class="keyword">except</span> IOError <span class="keyword">as</span> e:</div><div class="line">                        <span class="keyword">if</span> e.errno != errno.EPIPE <span class="keyword">and</span> e.errno != errno.EINVAL:</div><div class="line">                            <span class="keyword">raise</span></div><div class="line">                self.stdin.close()</div><div class="line">            <span class="comment"># 这个self.stout已经被封装成了eventlet中的GreenPipe</span></div><div class="line">            <span class="comment"># 读取数据就是执行 self.stdout.read()</span></div><div class="line">            <span class="keyword">elif</span> self.stdout:</div><div class="line">                stdout = _eintr_retry_call(self.stdout.read)</div><div class="line">                self.stdout.close()</div><div class="line">            <span class="keyword">elif</span> self.stderr:</div><div class="line">                stderr = _eintr_retry_call(self.stderr.read)</div><div class="line">                self.stderr.close()</div><div class="line">            self.wait()</div><div class="line">            <span class="keyword">return</span> (stdout, stderr)</div><div class="line">        <span class="comment"># 调用_communicate</span></div><div class="line">        <span class="keyword">return</span> self._communicate(input)</div><div class="line"></div><div class="line">       <span class="function"><span class="keyword">def</span> <span class="title">_communicate_with_select</span><span class="params">(self, input)</span>:</span></div><div class="line">            read_set = []</div><div class="line">            write_set = []</div><div class="line">            stdout = <span class="keyword">None</span> <span class="comment"># Return</span></div><div class="line">            stderr = <span class="keyword">None</span> <span class="comment"># Return</span></div><div class="line"></div><div class="line">            <span class="keyword">if</span> self.stdin <span class="keyword">and</span> input:</div><div class="line">                write_set.append(self.stdin)</div><div class="line">            <span class="keyword">if</span> self.stdout:</div><div class="line">                read_set.append(self.stdout)</div><div class="line">                stdout = []</div><div class="line">            <span class="keyword">if</span> self.stderr:</div><div class="line">                read_set.append(self.stderr)</div><div class="line">                stderr = []</div><div class="line"></div><div class="line">            input_offset = <span class="number">0</span></div><div class="line">            <span class="keyword">while</span> read_set <span class="keyword">or</span> write_set:</div><div class="line">                <span class="keyword">try</span>:</div><div class="line">                    rlist, wlist, xlist = select.select(read_set, write_set, [])</div><div class="line">                <span class="keyword">except</span> select.error, e:</div><div class="line">                    <span class="keyword">if</span> e.args[<span class="number">0</span>] == errno.EINTR:</div><div class="line">                        <span class="keyword">continue</span></div><div class="line">                    <span class="keyword">raise</span></div><div class="line"></div><div class="line">                <span class="keyword">if</span> self.stdin <span class="keyword">in</span> wlist:</div><div class="line">                    chunk = input[input_offset : input_offset + _PIPE_BUF]</div><div class="line">                    <span class="keyword">try</span>:</div><div class="line">                        bytes_written = os.write(self.stdin.fileno(), chunk)</div><div class="line">                    <span class="keyword">except</span> OSError <span class="keyword">as</span> e:</div><div class="line">                        <span class="keyword">if</span> e.errno == errno.EPIPE:</div><div class="line">                            self.stdin.close()</div><div class="line">                            write_set.remove(self.stdin)</div><div class="line">                        <span class="keyword">else</span>:</div><div class="line">                            <span class="keyword">raise</span></div><div class="line">                    <span class="keyword">else</span>:</div><div class="line">                        input_offset += bytes_written</div><div class="line">                        <span class="keyword">if</span> input_offset &gt;= len(input):</div><div class="line">                            self.stdin.close()</div><div class="line">                            write_set.remove(self.stdin)</div><div class="line"></div><div class="line">                <span class="keyword">if</span> self.stdout <span class="keyword">in</span> rlist:</div><div class="line">                    <span class="comment"># 调用os.read进行读写</span></div><div class="line">                    data = os.read(self.stdout.fileno(), <span class="number">1024</span>)</div><div class="line">                    <span class="comment"># 直到没有数据返回</span></div><div class="line">                    <span class="keyword">if</span> data == <span class="string">""</span>:</div><div class="line">                        self.stdout.close()</div><div class="line">                        read_set.remove(self.stdout)</div><div class="line">                    stdout.append(data)</div><div class="line"></div><div class="line">                <span class="keyword">if</span> self.stderr <span class="keyword">in</span> rlist:</div><div class="line">                    data = os.read(self.stderr.fileno(), <span class="number">1024</span>)</div><div class="line">                    <span class="keyword">if</span> data == <span class="string">""</span>:</div><div class="line">                        self.stderr.close()</div><div class="line">                        read_set.remove(self.stderr)</div><div class="line">                    stderr.append(data)</div><div class="line"></div><div class="line">            <span class="keyword">return</span> (stdout, stderr)</div></pre></td></tr></table></figure>
+<p>由于<code>self.stout</code>已经被<code>eventlet</code>封装成了<code>GreenPip</code>，因此其read方法需要查看<code>GreenPipe</code>。通过<code>GreenPipe</code>的初始化可以看到，传进来的原始的管道文件封装成了<code>_SocketDuckForFd</code>。而<code>GreenPipe</code>本身继承<code>_fileobjec</code>，其<code>read</code>方法也继承<code>_fileobject</code>。 </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># eventlet/greenio/py2.py</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">GreenPipe</span><span class="params">(_fileobject)</span>:</span></div><div class="line"></div><div class="line">    __doc__ = greenpipe_doc</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, f, mode=<span class="string">'r'</span>, bufsize=<span class="number">-1</span>)</span>:</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> isinstance(f, six.string_types + (int, file)):</div><div class="line">            <span class="keyword">raise</span> TypeError(<span class="string">'f(ile) should be int, str, unicode or file, not %r'</span> % f)</div><div class="line"></div><div class="line">        <span class="keyword">if</span> isinstance(f, six.string_types):</div><div class="line">            f = open(f, mode, <span class="number">0</span>)</div><div class="line"></div><div class="line">        <span class="keyword">if</span> isinstance(f, int):</div><div class="line">            fileno = f</div><div class="line">            self._name = <span class="string">"&lt;fd:%d&gt;"</span> % fileno</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            fileno = os.dup(f.fileno())</div><div class="line">            self._name = f.name</div><div class="line">            <span class="keyword">if</span> f.mode != mode:</div><div class="line">                <span class="keyword">raise</span> ValueError(<span class="string">'file.mode %r does not match mode parameter %r'</span> % (f.mode, mode))</div><div class="line">            self._name = f.name</div><div class="line">            f.close()</div><div class="line"></div><div class="line">        super(GreenPipe, self).__init__(_SocketDuckForFd(fileno), mode)</div><div class="line">        set_nonblocking(self)</div><div class="line">        self.softspace = <span class="number">0</span></div></pre></td></tr></table></figure>
+<p>最终调用的是<code>os.read</code>。这个逻辑比较复杂，可以归纳为基本的调用过程。</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">P<span class="function"><span class="title">open</span> -&gt;</span> <span class="function"><span class="title">eventlet</span>: subprocess.Popen -&gt;</span> <span class="function"><span class="title">python</span>:  subprocess.Popen -&gt;</span> stdout = GreePipe(pipe)</div><div class="line"></div><div class="line"><span class="function"><span class="title">communicate</span> -&gt;</span> <span class="function"><span class="title">eventlet</span>: communicate -&gt;</span> <span class="function"><span class="title">python</span>: communicate -&gt;</span> </div><div class="line"><span class="function"><span class="title">eventlet</span>: _communicate -&gt;</span> <span class="function"><span class="title">python</span>: _communicate -&gt;</span> <span class="function"><span class="title">python</span>: _communicate_with_select -&gt;</span> </div><div class="line">调用<span class="function"><span class="title">select</span>.select -&gt;</span> 调用os.read(self.stdout.fileno(), <span class="number">1024</span>)</div></pre></td></tr></table></figure>
+<p>这里面的关键在于<code>select</code>和<code>os</code>也会被<code>eventlet</code>替换，实际调用的是<code>eventlet</code>中的<code>select</code>和<code>os</code>。<br><code>os.read</code>中的读大小已经固定成1024(<code>glance_store</code>中传入的参数没有作用了)，而<code>select.select</code>会将后续的请求提交给<code>eventlet</code>的<code>Hub</code>中心进行<code>epoll</code>，所以逻辑演变成</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">select</span>.select请求提交给Hub ----&gt;</span> <span class="function"><span class="title">epoll</span>发现stdout可读 -------&gt;</span> <span class="function"><span class="title">os</span>.read读取1024 -&gt;</span></div><div class="line">^                                                       </div><div class="line">^--------------------------&lt;---------------------------&lt;-------------------&lt;-</div></pre></td></tr></table></figure>
+<p>每读取<code>1024</code>就将请求提交给<code>Hub</code>进行<code>epoll</code>，<code>epoll</code>发现管道中有读事件，则再次读取<code>1024</code>。这个循环读取<code>1024</code>和提交<code>epoll</code>请求消耗了大量的时间。</p>
+<h2 id="验证逻辑"><a href="#验证逻辑" class="headerlink" title="验证逻辑"></a>验证逻辑</h2><p>通过在<code>data = os.read(self.stdout.fileno(), 1024)</code>下面打印日志验证该逻辑。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"># python/subprocess.py</div><div class="line">class Popen(object);</div><div class="line">        ....</div><div class="line">        def _communicate_with_select(self, input):</div><div class="line">                if self.stdout in rlist:</div><div class="line">                    #data = os.read(self.stdout.fileno(), 104857600)</div><div class="line">                    data = os.read(self.stdout.fileno(), 1024)</div><div class="line">                    if data == "":</div><div class="line">                        self.stdout.close()</div><div class="line">                        read_set.remove(self.stdout)</div><div class="line">                    stdout.append(data)</div><div class="line">                    print 'read stdout: 1024'</div><div class="line">                    print 'path:', select.__file__</div></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[root@<span class="built_in">test</span>]<span class="comment"># python load.py</span></div><div class="line"><span class="built_in">read</span> stdout: 1024</div><div class="line">path: /usr/<span class="built_in">local</span>/lib/python2.7/site-packages/eventlet-0.17.4-py2.7.egg/eventlet/green/select.pyc</div><div class="line"><span class="built_in">read</span> stdout: 1024</div><div class="line">path: /usr/<span class="built_in">local</span>/lib/python2.7/site-packages/eventlet-0.17.4-py2.7.egg/eventlet/green/select.pyc</div></pre></td></tr></table></figure>
+<p>结果证明<code>select</code>确实被替换成eventlet中的<code>select</code>;进行了大量的1024读取，假设读取1G的数据那么这个循环会高达100多万次(1024*1024)。</p>
+<h2 id="优化程序"><a href="#优化程序" class="headerlink" title="优化程序"></a>优化程序</h2><hr>
+<p>进行大量循环<code>1024</code>读取是耗时的根本原因，因此增加每次读取的数据量，减少循环就会优化性能[3]。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"># python/subprocess.py</div><div class="line">class Popen(object);</div><div class="line">        ....</div><div class="line">        def _communicate_with_select(self, input):</div><div class="line">                if self.stdout in rlist:</div><div class="line">                    # 将一次读取数据量增大到100M</div><div class="line">                    data = os.read(self.stdout.fileno(), 104857600)</div><div class="line">                    #data = os.read(self.stdout.fileno(), 1024)</div><div class="line">                    if data == "":</div><div class="line">                        self.stdout.close()</div><div class="line">                        read_set.remove(self.stdout)</div><div class="line">                    stdout.append(data)</div></pre></td></tr></table></figure>
+<p>这个就是最开始的[3]性能优化后的程序，确实提高了数据读取速率。</p>
+<h2 id="给glance打补丁"><a href="#给glance打补丁" class="headerlink" title="给glance打补丁"></a>给glance打补丁</h2><hr>
+<p>因为<code>_communicate_with_select</code>是Python的原始库的代码，因此不能直接修改。但是我们可以效仿<code>eventlet</code>给其打补丁。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># glance_store/_dirvers/sheepdog.py</span></div><div class="line"></div><div class="line"><span class="keyword">import</span> eventlet</div><div class="line"></div><div class="line"><span class="comment"># 定义自己的_communicate_with_select函数。</span></div><div class="line"></div><div class="line"><span class="comment"># 除了一行之外其他代码复制标准库中的该函数</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_communicate_with_select</span><span class="params">(self, input)</span>:</span></div><div class="line">    <span class="keyword">if</span> self.stdout <span class="keyword">in</span> rlist:</div><div class="line">        <span class="comment"># 每次读取的数据量换成glance_store中的配置sheepdog_store_chunck_size</span></div><div class="line">        data = os.read(self.stdout.fileno(), sheepdog_store_chunk_size)</div><div class="line">        <span class="comment">#data = os.read(self.stdout.fileno(), 1024)</span></div><div class="line">        <span class="keyword">if</span> data == <span class="string">""</span>:</div><div class="line">            self.stdout.close()</div><div class="line">            read_set.remove(self.stdout)</div><div class="line">            stdout.append(data)</div><div class="line">                    </div><div class="line"></div><div class="line"><span class="keyword">if</span> eventlet.is_monkey_patched(<span class="string">'subprocess'</span>):</div><div class="line">    subprocess.Popen._communicate_with_select = _communicate_with_select</div></pre></td></tr></table></figure>
+<p>通过打补丁，<code>glance</code>的下载镜像速度能够打满千兆网卡到达100+M/s，是原来的5~10倍。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/10/26/notes-howtodisagree/" rel="next" title="如何反驳-HowToDisagree">
+                <i class="fa fa-chevron-left"></i> 如何反驳-HowToDisagree
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/10/28/openstack-将glance的下载速度加快10倍/"
+           data-title="10X优化glance镜像下载速率" data-url="http://fanchao01.github.io/blog/blog/2016/10/28/openstack-将glance的下载速度加快10倍/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">35</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景知识"><span class="nav-number">1.</span> <span class="nav-text">背景知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#简单的例子"><span class="nav-number">2.</span> <span class="nav-text">简单的例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#subprocess惹的祸"><span class="nav-number">3.</span> <span class="nav-text">subprocess惹的祸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证逻辑"><span class="nav-number">4.</span> <span class="nav-text">验证逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优化程序"><span class="nav-number">5.</span> <span class="nav-text">优化程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#给glance打补丁"><span class="nav-number">6.</span> <span class="nav-text">给glance打补丁</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
