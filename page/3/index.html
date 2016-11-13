@@ -250,6 +250,183 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2014/08/13/python的多重继承/" itemprop="url">
+                  Python多重继承
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-08-13T00:00:00-07:00" content="2014-08-13">
+              2014-08-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/08/13/python的多重继承/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/08/13/python的多重继承/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="关于多重继承"><a href="#关于多重继承" class="headerlink" title="关于多重继承"></a>关于多重继承</h2><hr>
+<p>我比较赞成继承的本质是逐步细化，即逐步的补充原来抽象层次所欠缺的，不断补充具体的应用场景，最终达到应用层次。对于继承的原因，一般分为两种：第一种是对接口（界面约定）的实现，另一种是重载(override)。就像java语言的设计，对于接口(interface)的继承叫做<code>实现</code>（implements），对于普通类的继承叫做<code>扩展</code>（extends）。并且规定接口不能实例化，而多重继承必须是一个抽象类和多个接口类。这也是使用多重继承的一般性原则。</p>
+<h2 id="python中的新类和旧类"><a href="#python中的新类和旧类" class="headerlink" title="python中的新类和旧类"></a>python中的新类和旧类</h2><hr>
+<p>python中的继承比较麻烦。由于一开始的设计问题，python中分为新类和旧类。新类指所有继承了object对象的类，而旧类指所有没有继承object的类。 </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">NewClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">OldClass</span>:</span></div><div class="line">	<span class="keyword">pass</span></div></pre></td></tr></table></figure>
+<h2 id="python旧类的方法继承顺序"><a href="#python旧类的方法继承顺序" class="headerlink" title="python旧类的方法继承顺序"></a>python旧类的方法继承顺序</h2><hr>
+<p>对于旧类，多重继承中方法采用<code>深度优先</code>算法。按顺序从一个父类一直深度搜索，然后再搜索第二个父类，一直到找到方法为止。 </p>
+<ol>
+<li>当只有一层继承时:</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">pass</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'A'</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">B</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">pass</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'B'</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A, B)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		A.__init__(self)</div><div class="line">		B.__init__(self)</div><div class="line"></div><div class="line">c = Child()</div><div class="line">c.method()</div><div class="line">&gt;&gt;&gt;A</div></pre></td></tr></table></figure>
+<p>可以看到<code>c.method</code>方法实际为 <code>A.method</code>方法。<br>将 <code>Child(A, B)</code> 改变继承顺序为 <code>Child(B, A)</code>再观察。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(B, A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		A.__init__(self)</div><div class="line">		B.__init__(self)</div><div class="line"></div><div class="line">c = Child()</div><div class="line">c.method()</div><div class="line">&gt;&gt;&gt;B</div></pre></td></tr></table></figure>
+<p>这时继承<code>c.method</code>方法实际为<code>B.method</code>方法。<br><strong>按照继承参数列表中的顺序由前向后查找， C(A, B) =&gt; C -&gt; A -&gt; B</strong></p>
+<ol>
+<li>有多层继承时</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'A'</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">AA</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">B</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'B'</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">BB</span><span class="params">(B)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(AA, BB)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line">c = Child()</div><div class="line">c.method()</div><div class="line">&gt;&gt;&gt;A</div></pre></td></tr></table></figure>
+<p>可以看到， <code>c.method</code> 方法实际为 <code>A.method</code>, 查找顺序为 <code>C -&gt; A -&gt; AA</code>。<br><strong>按照继承参数列表中的顺序由前向后，深度优先查找。</strong></p>
+<h2 id="python旧类中的属性继承顺序"><a href="#python旧类中的属性继承顺序" class="headerlink" title="python旧类中的属性继承顺序"></a>python旧类中的<strong>属性</strong>继承顺序</h2><hr>
+<p>如果存在初始化函数，旧类只能通过显示调用父类的初始化函数。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">class A:</div><div class="line">	def __init__(self):</div><div class="line">		self.var = 'A'</div><div class="line"></div><div class="line">class B:</div><div class="line">	def __init__(self):</div><div class="line">		self.var = 'B"</div><div class="line"></div><div class="line">class Child(A, B):</div><div class="line">	def __init__(self):</div><div class="line">		A.__init__(self)</div><div class="line">		B.__init__(self)</div><div class="line"></div><div class="line">c = Child()</div><div class="line">print c.var</div><div class="line">&gt;&gt;&gt; B</div></pre></td></tr></table></figure>
+<p>类属性查找没有像类方法那样，采用深度优先顺序。我们知道，在python中属性是存放在 <code>__dict__</code>中，而初始化就是给这个字典设置值。所以，后初始化中设置的属性值会<strong>冲掉</strong>先初始化设置的值。<br><strong>因此，子类的属性由最后一个初始化的父类决定。</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A, B)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		B.__init__(self) <span class="comment">#修改初始化顺序</span></div><div class="line">		A.__init__(self)</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> c.var</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>A</div></pre></td></tr></table></figure>
+<p>可见，初始化顺序决定了属性的初值。</p>
+<h2 id="python旧类继承的问题"><a href="#python旧类继承的问题" class="headerlink" title="python旧类继承的问题"></a>python旧类继承的问题</h2><hr>
+<ol>
+<li>祖类的多次初始化<br>python旧类有个很严重的问题, 就是<code>共同祖类</code>的多次初始化。如果继承的多个父类他们有共同祖类（父类们有相同的父类）,会导致祖类的多次初始化。</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></div><div class="line">	INITIAL = <span class="number">0</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__class__.INITIAL += <span class="number">1</span></div><div class="line">		self.var = self.INITIAL</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">AA</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		A.__init__(self)</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">BB</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		A.__init__(self)</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(AA, BB)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		AA.__init__(self)</div><div class="line">		BB.__init__(self)</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> c.var</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">2</span></div></pre></td></tr></table></figure>
+<h2 id="python新类的方法继承"><a href="#python新类的方法继承" class="headerlink" title="python新类的方法继承"></a>python新类的方法继承</h2><hr>
+<p>为了解决祖类的多次初始化，以及属性与初始化顺序相关的问题（还有其他问题)。python设计了新类，并且用<code>super</code>隐式进行父类的初始化。</p>
+<p>但是新类有一个问题就是，任何多重继承的子类都有一个共同的祖类<code>object</code>，都是菱形继承。<br>如果再按照深度优先，那么一些方法最终调用的都是<code>object</code>的方法，而不是其他父类中定义的方法。</p>
+<p>所以新类的方法是按照 <code>klass.__mro__</code>中储存的类的顺序查找的。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">class A(object):</div><div class="line">	def method(self):</div><div class="line">		print 'A'</div><div class="line"></div><div class="line">class B(object):</div><div class="line">	def method(self):</div><div class="line">		print 'B'</div><div class="line"></div><div class="line">class AA(A):</div><div class="line">	pass</div><div class="line"></div><div class="line">def Child(AA, B):</div><div class="line">	pass</div><div class="line"></div><div class="line">c = Child()</div><div class="line"></div><div class="line">print Child.__mro__</div><div class="line">&gt;&gt;&gt;(&lt;class '__main__.Child'&gt;, &lt;class '__main__.AA'&gt;, &lt;class '__main__.A'&gt;, &lt;class '__main__.B'&gt;, &lt;type 'object'&gt;)</div><div class="line"></div><div class="line">c.method()</div><div class="line">&gt;&gt; A</div></pre></td></tr></table></figure>
+<p>可见是按照<code>Child.__mro__</code>的顺序查找，而且<code>object</code>永远是最后一个父类。</p>
+<h2 id="python新类的属性继承"><a href="#python新类的属性继承" class="headerlink" title="python新类的属性继承"></a>python新类的属性继承</h2><hr>
+<p>在新类中，通过调用<code>super</code>函数进行隐式的父类初始化，保持与方法继承同样的顺序，并且避免祖类的多次初始化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span><span class="params">(object)</span>:</span></div><div class="line">	INITIAL = <span class="number">0</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.__class__.INITIAL += <span class="number">1</span></div><div class="line">		self.var = self.INITIAL</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">AA</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(AA, self).__init__()</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">BB</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(BB, self).__init__()</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(AA, BB)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(Child, self).__init__()</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> Child.__mro__</div><div class="line">&gt;&gt;&gt;(__main__.Child, __main__.AA, __main__.BB, __main__.A, object)</div><div class="line"></div><div class="line"><span class="keyword">print</span> c.var</div><div class="line">&gt;&gt;&gt;<span class="number">1</span></div></pre></td></tr></table></figure>
+<p>不仅避免了祖类A的多次初始化，又保持与方法的查找都是按照 <code>Child.__mro__</code>进行的。</p>
+<h2 id="新类的问题"><a href="#新类的问题" class="headerlink" title="新类的问题"></a>新类的问题</h2><hr>
+<h3 id="问题一"><a href="#问题一" class="headerlink" title="问题一"></a>问题一</h3><p><code>super</code>函数不能兼容旧类。因此当继承旧类时不能使用<code>super</code>初始化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self.a = <span class="string">'A'</span></div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'A'</span></div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(Child, self).__init__()</div><div class="line"></div><div class="line">c = Child()</div><div class="line"></div><div class="line">&gt;&gt;&gt;TypeError: must be type, <span class="keyword">not</span> classobj</div></pre></td></tr></table></figure>
+<p>有两个办法解决这个问题。<br>办法一： 利用多重继承<code>object</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A, object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(Child, self).__init__()</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> c.method()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>A</div></pre></td></tr></table></figure>
+<p>办法二： 将<code>is-a</code>修改为<code>has-a</code>,并且利用<code>__getattr__</code>动态获取属性和方法。将继承修改为拥有关系。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		self._base = A()</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, attr)</span>:</span></div><div class="line">		<span class="keyword">return</span> getattr(self._base, attr)</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> c.method()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>A</div></pre></td></tr></table></figure>
+<h3 id="问题二"><a href="#问题二" class="headerlink" title="问题二"></a>问题二</h3><p>当继承多个拥有初始化函数<code>__init__</code>时，无法同时初始化。(强烈不建议这种情况下的多重继承)</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, arg1)</span>:</span></div><div class="line">		self.arg1 = arg1</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">B</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, arg2, arg3)</span>:</span></div><div class="line">		self.arg2 = arg2</div><div class="line">		self.arg3 = arg3</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A, B)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(Child, self).__init__(<span class="string">'arg1'</span>)</div><div class="line"></div><div class="line">c = Child()</div><div class="line"></div><div class="line"><span class="keyword">print</span> c.arg1</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>arg1</div><div class="line"></div><div class="line"><span class="keyword">print</span> c.arg2</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>AttributeError: <span class="string">'Child'</span> object has no attribute <span class="string">'arg2'</span></div><div class="line"></div><div class="line"><span class="keyword">print</span> c.arg3</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>AttributeError: <span class="string">'Child'</span> object has no attribute <span class="string">'arg3'</span></div><div class="line"></div><div class="line"><span class="keyword">print</span> Child.__mro__</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>(__main__.Child, __main__.A, __main__.B, object)</div></pre></td></tr></table></figure>
+<p>按照<code>Child.__mro</code>，直接调用 <code>A.__init__</code>初始化函数，而不会调用<code>B.__init__</code>初始化函数。</p>
+<p>改变继承顺序<code>Child(A, B)</code>-&gt;<code>Child(B, A)</code>观察其变化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(B, A)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		super(Child, self).__init__()</div><div class="line"></div><div class="line">c = Child()</div><div class="line">&gt;&gt;&gt;TypeError: __init__() takes exactly <span class="number">3</span> </div><div class="line">&gt;uments (<span class="number">1</span> given)</div><div class="line"></div><div class="line"><span class="keyword">print</span> Child.__mro_</div><div class="line">&gt;&gt;&gt;(__main__.Child, __main__.B, __main__.A, object)</div></pre></td></tr></table></figure>
+<p>此时初始化需要3个参数，可见调用的是 <code>B.__init__</code>。</p>
+<p>有一个办法解决这个问题。<br>像旧类那样，显式的分别初始化父类</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span><span class="params">(A, B)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">		A.__init__(self, <span class="string">'arg1'</span>)</div><div class="line">		B.__init__(self, <span class="string">'arg2'</span>, <span class="string">'arg3'</span>)</div><div class="line"></div><div class="line">c = Child()</div><div class="line"><span class="keyword">print</span> c.arg1, c.arg2, c.arg3</div><div class="line">&gt;&gt;&gt;<span class="string">'arg1'</span>, <span class="string">'arg2'</span>, <span class="string">'arg3'</span></div></pre></td></tr></table></figure>
+<h2 id="python多重继承的一般性原则"><a href="#python多重继承的一般性原则" class="headerlink" title="python多重继承的一般性原则"></a>python多重继承的一般性原则</h2><hr>
+<p><strong>1. 永远使用新类, 继承object; 不继承旧类。</strong><br><strong>2. 多重继承只在父类中只有一个有初始化函数的情况下。</strong></p>
+<p>简单来说，就是像java那样，只采用一个类为基类，其他为接口的情况下</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+       
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2014/07/17/python_decorator/" itemprop="url">
                   Python Decorator 装饰器
                 </a>
@@ -1003,7 +1180,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">35</span>
+              <span class="site-state-item-count">36</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
