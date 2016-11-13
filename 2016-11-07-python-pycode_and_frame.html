@@ -1,0 +1,691 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Blog My Minds" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="PyCodeObject与PyFrameObject之执行字节码">
+<meta property="og:type" content="website">
+<meta property="og:title" content="python源码剖析-字节码和虚拟机">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2016-11-07-python-pycode_and_frame.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="PyCodeObject与PyFrameObject之执行字节码">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_structure.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_link.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_runtime_env.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_run_1.jpg">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_run_2.jpg">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_run_3.jpg">
+<meta property="og:updated_time" content="2016-11-13T05:49:23.302Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python源码剖析-字节码和虚拟机">
+<meta name="twitter:description" content="PyCodeObject与PyFrameObject之执行字节码">
+<meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/python_frame_structure.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://fanchao01.github.io/blog/2016-11-07-python-pycode_and_frame.html"/>
+
+  <title> python源码剖析-字节码和虚拟机 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                python源码剖析-字节码和虚拟机
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-11-13T00:00:00-08:00" content="2016-11-13">
+              2016-11-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/" itemprop="url" rel="index">
+                    <span itemprop="name"></span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016-11-07-python-pycode_and_frame.html#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016-11-07-python-pycode_and_frame.html" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Python会将代码先编译成字节码，然后在虚拟机中动态得依次解释执行字节码。编译好的字节码存储在硬盘中以<code>.pyc</code>、<code>.pyd</code>等为扩展名。而在运行态，这些字节码会作为Python的一种对象<code>PyCodeObject</code>存在。<code>PyCodeObject</code>可以理解为C语言中的文本段，用于存储编译后的字节码、调试信息、常量值、变量名等。</p>
+<p>本文不会讲述代码如何一步步编译成<code>PyCodeObject</code>，只会简单介绍<code>PyCodeObject</code>中各个域的含义，而把重点放在介绍Python的虚拟机和执行流。</p>
+<h2 id="Python中的伪码PyCodeObject"><a href="#Python中的伪码PyCodeObject" class="headerlink" title="Python中的伪码PyCodeObject"></a>Python中的伪码PyCodeObject</h2><hr>
+<p><code>PyCodeObject</code>保存代编译后的静态信息，在运行时再结合上下文形成一个完整的运行态环境。让我们看看静态编译后的信息都有哪些。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</div><div class="line">    PyObject_HEAD</div><div class="line">    <span class="keyword">int</span> co_argcount;    <span class="comment">// co_argcount 参数，不包括不定参数</span></div><div class="line">    <span class="keyword">int</span> co_nlocals;		<span class="comment">// co_nlocals 变量个数，co_argcount + </span></div><div class="line">                        <span class="comment">// 可变参数个数 + co_kwonlyargcount(py3.0) + 局部变量个数</span></div><div class="line">    <span class="keyword">int</span> co_stacksize;   <span class="comment">// 栈的大小 (编译后需要的最大栈深度) </span></div><div class="line">    <span class="keyword">int</span> co_flags;		<span class="comment">// PyCodeObject的一些标志位，用来优化运行时的性能</span></div><div class="line">    PyObject *co_code;		<span class="comment">// 编译后的字节码字符串</span></div><div class="line">    PyObject *co_consts;	<span class="comment">// 常量的列表</span></div><div class="line">    PyObject *co_names;		<span class="comment">// 常量中的字符串对象</span></div><div class="line">    PyObject *co_varnames;	<span class="comment">// 变量名字的元组</span></div><div class="line">    PyObject *co_freevars;	<span class="comment">// 自由变量的元组</span></div><div class="line">    PyObject *co_cellvars;      <span class="comment">// cell变量的元组</span></div><div class="line">    <span class="comment">/* The rest doesn't count for hash/cmp */</span></div><div class="line">    PyObject *co_filename;	<span class="comment">// 文件名</span></div><div class="line">    PyObject *co_name;		<span class="comment">// 对象的名字，例如函数的名字、类的名字等</span></div><div class="line">    <span class="keyword">int</span> co_firstlineno;		<span class="comment">// 对应的代码在源码文件中的起始行号</span></div><div class="line">    PyObject *co_lnotab;	<span class="comment">// 伪码与行号的映射</span></div><div class="line">    <span class="keyword">void</span> *co_zombieframe;     <span class="comment">// 对于一些特殊情况下的优化</span></div><div class="line">    PyObject *co_weakreflist;   <span class="comment">// 支持弱引用</span></div><div class="line">&#125; PyCodeObject;</div></pre></td></tr></table></figure>
+<p>其中有些域需要特别解释。</p>
+<ul>
+<li>co_flags 用来保存一些编译信息，主要用于优化工作。例如co_VARARGS(0x0004)表示有可变参数等，具体见code.h文件。</li>
+<li>co_freevars 自由变量是一些在作用域内使用，但是没有在本作用域定义的变量。</li>
+<li>co_cellvars 当前作用域定义，而在闭包等内部使用的变量。</li>
+<li>co_lnotab 字节码的偏移值与对应的源码的行号的相对值。</li>
+</ul>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">字节码在co_code中的偏移值   真实行号 行号的偏移值</div><div class="line"><span class="number">0</span>                         <span class="number">1</span>       <span class="number">0</span> </div><div class="line"><span class="number">6</span>                         <span class="number">2</span>       <span class="number">1</span></div><div class="line"><span class="number">50</span>                        <span class="number">7</span>       <span class="number">5</span></div></pre></td></tr></table></figure>
+<p>那么实际上<code>co_lnotab</code>记录的是(0, 0), (6, 1), (44, 5)，当然实际记录中没有括号。具体<code>偏移值</code>和真实行号的对应关系可以通过下面的算法计算出来。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// codeobject.c</span></div><div class="line"><span class="function"><span class="keyword">int</span></span></div><div class="line"><span class="title">PyCode_Addr2Line</span><span class="params">(PyCodeObject *co, <span class="keyword">int</span> addrq)</span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> size = PyString_Size(co-&gt;co_lnotab) / <span class="number">2</span>;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> *p = (<span class="keyword">unsigned</span> <span class="keyword">char</span>*)PyString_AsString(co-&gt;co_lnotab);</div><div class="line">    <span class="keyword">int</span> line = co-&gt;co_firstlineno;</div><div class="line">    <span class="keyword">int</span> addr = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (--size &gt;= <span class="number">0</span>) &#123;</div><div class="line">        addr += *p++;</div><div class="line">        <span class="keyword">if</span> (addr &gt; addrq)</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        line += *p++;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> line;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>co_code 记录编译后的字节码，以字符串的形式保存，而实际上就是数字。后面我们通过一个例子详细描述。</li>
+</ul>
+<h2 id="PyCodeObject的示例"><a href="#PyCodeObject的示例" class="headerlink" title="PyCodeObject的示例"></a>PyCodeObject的示例</h2><hr>
+<p>先给定一个Python代码示例，然后打印出其中的各个域。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> print_function</div><div class="line"><span class="keyword">import</span> dis</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">out</span><span class="params">(a, b=<span class="number">1</span>, *args, **kwargs)</span>:</span></div><div class="line">    c = <span class="number">2</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(d, e=<span class="number">3</span>, *iargs, **ikwargs)</span>:</span></div><div class="line">        f = <span class="number">4</span></div><div class="line">        g = c</div><div class="line"></div><div class="line">    print(<span class="string">'inner--&gt;co_argcount        :'</span>, inner.__code__.co_argcount)</div><div class="line"><span class="comment">#    print('inner--&gt;co_kwonlyargcount  :', inner.__code__.co_kwonlyargcount)</span></div><div class="line">    print(<span class="string">'inner--&gt;co_nlocals         :'</span>, inner.__code__.co_nlocals)</div><div class="line">    print(<span class="string">'inner--&gt;co_stacksize       :'</span>, inner.__code__.co_stacksize)</div><div class="line">    print(<span class="string">'inner--&gt;co_flags           :'</span>, inner.__code__.co_flags)</div><div class="line">    print(<span class="string">'inner--&gt;co_code            :'</span>, inner.__code__.co_code)</div><div class="line">    print(<span class="string">'inner--&gt;co_consts          :'</span>, inner.__code__.co_consts)</div><div class="line">    print(<span class="string">'inner--&gt;co_names           :'</span>, inner.__code__.co_names)</div><div class="line">    print(<span class="string">'inner--&gt;co_varnames        :'</span>, inner.__code__.co_varnames)</div><div class="line">    print(<span class="string">'inner--&gt;co_freevars        :'</span>, inner.__code__.co_freevars)</div><div class="line">    print(<span class="string">'inner--&gt;co_cellvars        :'</span>, inner.__code__.co_cellvars)</div><div class="line">    print(<span class="string">'inner--&gt;co_filename        :'</span>, inner.__code__.co_filename)</div><div class="line">    print(<span class="string">'inner--&gt;co_name            :'</span>, inner.__code__.co_name)</div><div class="line">    print(<span class="string">'inner--&gt;co_firstlineno     :'</span>, inner.__code__.co_firstlineno)</div><div class="line">    print(<span class="string">'inner--&gt;co_lnotab          :'</span>, inner.__code__.co_lnotab)</div><div class="line">    </div><div class="line">print(<span class="string">'out--&gt;co_argcount        :'</span>, out.__code__.co_argcount)</div><div class="line"><span class="comment">#print('out--&gt;co_kwonlyargcount  :', out.__code__.co_kwonlyargcount)</span></div><div class="line">print(<span class="string">'out--&gt;co_nlocals         :'</span>, out.__code__.co_nlocals)</div><div class="line">print(<span class="string">'out--&gt;co_stacksize       :'</span>, out.__code__.co_stacksize)</div><div class="line">print(<span class="string">'out--&gt;co_flags           :'</span>, out.__code__.co_flags)</div><div class="line">print(<span class="string">'out--&gt;co_code            :'</span>, out.__code__.co_code)</div><div class="line">print(<span class="string">'out--&gt;co_consts          :'</span>, out.__code__.co_consts)</div><div class="line">print(<span class="string">'out--&gt;co_names           :'</span>, out.__code__.co_names)</div><div class="line">print(<span class="string">'out--&gt;co_varnames        :'</span>, out.__code__.co_varnames)</div><div class="line">print(<span class="string">'out--&gt;co_freevars        :'</span>, out.__code__.co_freevars)</div><div class="line">print(<span class="string">'out--&gt;co_cellvars        :'</span>, out.__code__.co_cellvars)</div><div class="line">print(<span class="string">'out--&gt;co_filename        :'</span>, out.__code__.co_filename)</div><div class="line">print(<span class="string">'out--&gt;co_name            :'</span>, out.__code__.co_name)</div><div class="line">print(<span class="string">'out--&gt;co_firstlineno     :'</span>, out.__code__.co_firstlineno)</div><div class="line">print(<span class="string">'out--&gt;co_lnotab          :'</span>, out.__code__.co_lnotab)</div><div class="line">print(<span class="string">'========================================================='</span>)</div><div class="line">out(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, e = <span class="number">8</span>, f = <span class="number">9</span>)</div><div class="line"></div><div class="line">print()</div><div class="line">print(<span class="string">'disamble:'</span>)</div><div class="line">print(dis.dis(out))</div></pre></td></tr></table></figure>
+<p>需要先解释一下<code>co_kwonlyargcount</code>，这个域在<code>PY3</code>才有，用于支持在不定参数后定义的位置参数，例如<code>def func(*args, kwonly=None)</code>。</p>
+<p>这个实例的输出可以看到对应的各个域的详细内容。</p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">out--&gt;co_argcount        : <span class="number">2</span>     <span class="comment"># a, b</span></div><div class="line">out--&gt;co_nlocals         : <span class="number">5</span>     <span class="comment"># a, b, c, d, e</span></div><div class="line">out--&gt;co_stacksize       : <span class="number">3</span>     </div><div class="line">out--&gt;co_flags           : <span class="number">65551</span> <span class="comment"># b'0b10000000000001111'  CO_FUTURE_PRINT_FUNCTION|CO_VARKEYWORDS|CO_VARARGS|CO_NEWLOCALS|CO_OPTIMIZED </span></div><div class="line">out--&gt;co_code            : ddfd&#125;t...  <span class="comment"># 部分省略，后续分析</span></div><div class="line">out--&gt;co_consts          : (None, <span class="number">2</span>, <span class="number">3</span>, &lt;code object inner&gt;, <span class="string">'inner--&gt;co_argcount        :'</span>, <span class="comment"># 省略其他'inner--&gt;')  # 常量值，这里添加了默认返回值None</span></div><div class="line">out--&gt;co_names           : (<span class="string">'print'</span>, <span class="string">'__code__'</span>, <span class="string">'co_argcount'</span>, <span class="string">'co_nlocals'</span>, <span class="string">'co_stacksize'</span>, <span class="string">'co_flags'</span>, <span class="string">'co_code'</span>, <span class="string">'co_consts'</span>, <span class="string">'co_names'</span>, <span class="string">'co_varnames'</span>, <span class="string">'co_freevars'</span>,<span class="string">'co_cellvars'</span>, <span class="string">'co_filename'</span>, <span class="string">'co_name'</span>, <span class="string">'co_firstlineno'</span>, <span class="string">'co_lnotab'</span>)  <span class="comment"># 常量名</span></div><div class="line">out--&gt;co_varnames        : (<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'args'</span>, <span class="string">'kwargs'</span>, <span class="string">'inner'</span>)   <span class="comment"># 变量名字，包括参数变量和内部变量</span></div><div class="line">out--&gt;co_freevars        : ()                                      <span class="comment"># 无</span></div><div class="line">out--&gt;co_cellvars        : (<span class="string">'c'</span>,)                                  <span class="comment"># 用于给子作用域使用的变量</span></div><div class="line">out--&gt;co_filename        : pycode.py          </div><div class="line">out--&gt;co_name            : out</div><div class="line">out--&gt;co_firstlineno     : <span class="number">3</span>                                       <span class="comment"># 起始行号</span></div><div class="line">out--&gt;co_lnotab          :                                         <span class="comment"># 省略</span></div><div class="line">=========================================================</div><div class="line">inner--&gt;co_argcount        : <span class="number">2</span>                                     <span class="comment"># d, e</span></div><div class="line">inner--&gt;co_nlocals         : <span class="number">6</span>                                     <span class="comment"># d, e, iargs, ikwargs, f, g</span></div><div class="line">inner--&gt;co_stacksize       : <span class="number">1</span>                                     <span class="comment"># </span></div><div class="line">inner--&gt;co_flags           : <span class="number">65567</span>                                 <span class="comment"># '0b10000000000011111' CO_FUTURE_PRINT_FUNCTION|CO_NESTED |CO_VARKEYWORDS|CO_VARARGS|CO_NEWLOCALS|CO_OPTIMIZED</span></div><div class="line">inner--&gt;co_code            : d&#125;&#125;dS                                 <span class="comment"># 省略</span></div><div class="line">inner--&gt;co_consts          : (None, <span class="number">4</span>)                             <span class="comment"># 常量</span></div><div class="line">inner--&gt;co_names           : ()                                    <span class="comment">#</span></div><div class="line">inner--&gt;co_varnames        : (<span class="string">'d'</span>, <span class="string">'e'</span>, <span class="string">'iargs'</span>, <span class="string">'ikwargs'</span>, <span class="string">'f'</span>, <span class="string">'g'</span>)   <span class="comment"># 变量名字</span></div><div class="line">inner--&gt;co_freevars        : (<span class="string">'c'</span>,)                                     <span class="comment"># 自由变量，引用的父作用域的变量</span></div><div class="line">inner--&gt;co_cellvars        : ()                                         <span class="comment"># 无</span></div><div class="line">inner--&gt;co_filename        : pycode.py</div><div class="line">inner--&gt;co_name            : inner</div><div class="line">inner--&gt;co_firstlineno     : <span class="number">6</span>                                          <span class="comment"># 起始行号</span></div><div class="line">inner--&gt;co_lnotab          :                                            <span class="comment"># 省略</span></div></pre></td></tr></table></figure>
+<p>从这个例子中可以清楚了解常量、变量、自由变量以及cell变量的含义。接下来我们看下<code>co_code</code>的含义，使用linux的<code>xdd</code>工具将其转换成十六进制，并且使用<code>dis</code>模块反编译其字节码。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> dis</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">out</span><span class="params">(a, b=<span class="number">1</span>, *args, **kwargs)</span>:</span></div><div class="line">    c = <span class="number">2</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(d, e=<span class="number">3</span>, *iargs, **ikwargs)</span>:</span></div><div class="line">        f = <span class="number">4</span></div><div class="line">        g = c</div><div class="line"></div><div class="line"><span class="keyword">print</span> out.__code__.co_code</div><div class="line">dis.dis(out)</div></pre></td></tr></table></figure>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"># co_code的十六进制内容</div><div class="line"><span class="number">0000000</span>: <span class="number">6401 0089</span> <span class="number">0000 6402</span> <span class="number">0087 0000</span> <span class="number">6601 0064</span>  d.....d.....f..d</div><div class="line"><span class="number">0000010</span>: <span class="number">0300 8601</span> <span class="number">007d</span> <span class="number">0400 6400</span> <span class="number">0053</span> <span class="number">0</span>a         .....&#125;..d..S.</div></pre></td></tr></table></figure>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"># 字节码的反编译</div><div class="line">  <span class="number">4</span>           <span class="number">0</span> LOAD_CONST               <span class="number">1</span> (<span class="number">2</span>)</div><div class="line">              <span class="number">3</span> STORE_DEREF              <span class="number">0</span> (c)</div><div class="line"></div><div class="line">  <span class="number">6</span>           <span class="number">6</span> LOAD_CONST               <span class="number">2</span> (<span class="number">3</span>)</div><div class="line">              <span class="number">9</span> LOAD_CLOSURE             <span class="number">0</span> (c)</div><div class="line">             <span class="number">12</span> BUILD_TUPLE              <span class="number">1</span></div><div class="line">             <span class="number">15</span> LOAD_CONST               <span class="number">3</span> (&lt;code object inner at <span class="number">00000000039E69</span>B0, file <span class="string">"&lt;ipython-input-2-656e8bface8a&gt;"</span>, line <span class="number">6</span>&gt;)</div><div class="line">             <span class="number">18</span> MAKE_CLOSURE             <span class="number">1</span></div><div class="line">             <span class="number">21</span> STORE_FAST               <span class="number">4</span> (inner)</div><div class="line">             <span class="number">24</span> LOAD_CONST               <span class="number">0</span> (None)</div><div class="line">             <span class="number">27</span> RETURN_VALUE</div></pre></td></tr></table></figure>
+<ul>
+<li>十六进制的第一个为<code>64</code>值<code>100</code>，查阅<code>opcode.h</code>可以看到起对应的字节码<code>#define LOAD_CONST    100</code>，与反编译中的命令<code>LOAD_CONST</code>相符。</li>
+<li>十六进制的第二个为<code>01</code>值<code>01</code>，对应的是字节码<code>LOAD_CONST</code>的参数<code>1</code>。</li>
+<li>十六进制的第三个为<code>00</code>值<code>00</code>，此值表示<code>STOP_CDOE</code>，一个完整字节码的结束标志。</li>
+</ul>
+<p>同理可以解析接下来的字节码和对应的操作的含义。至此，我们明白字节码的格式为</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">字节码指令编号<span class="comment">(64)</span> 多个参数值<span class="comment">(1)</span> 结束标志<span class="comment">(00)</span></div></pre></td></tr></table></figure>
+<p>到现在为止我们明白了字节码的数据结构、各域值的含义，<code>co_code</code>字节码的格式以及如何与操作命令对应。下面我们看看这些字节码如何运行。</p>
+<h2 id="PyFrameObject"><a href="#PyFrameObject" class="headerlink" title="PyFrameObject"></a>PyFrameObject</h2><hr>
+<p>Python模拟了C语言中的运行栈作为运行时的环境，每个栈用<code>PyFrameObject</code>结构表示。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="number">_f</span>rame &#123;</div><div class="line">    PyObject_VAR_HEAD</div><div class="line">    <span class="keyword">struct</span> <span class="number">_f</span>rame *f_back;     <span class="comment">// 前一个运行栈，调用方</span></div><div class="line">    PyCodeObject *f_code;      <span class="comment">// 执行的PyCodeObject对象</span></div><div class="line">    PyObject *f_builtins;      <span class="comment">// builtins环境变量集合</span></div><div class="line">    PyObject *f_globals;       <span class="comment">// globals全局变量集合</span></div><div class="line">    PyObject *f_locals;        <span class="comment">// locals本地变量集合</span></div><div class="line">    PyObject **f_valuestack;   <span class="comment">// 栈起始地址，最后一个本地变量之后</span></div><div class="line">    PyObject **f_stacktop;     <span class="comment">// 栈针位置，指向栈中下一个空闲位置</span></div><div class="line">    PyObject *f_trace;         <span class="comment">// trace函数</span></div><div class="line">    PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;  <span class="comment">// 记录异常处理</span></div><div class="line"></div><div class="line">    PyThreadState *f_tstate;   <span class="comment">// 当前的线程</span></div><div class="line">    <span class="keyword">int</span> f_lasti;		       <span class="comment">// 当前执行的字节码的地址</span></div><div class="line">    <span class="keyword">int</span> f_lineno;		       <span class="comment">// 当前的行号</span></div><div class="line">    <span class="keyword">int</span> f_iblock;		       <span class="comment">// 一些局部block块</span></div><div class="line">    PyTryBlock f_blockstack[CO_MAXBLOCKS]; <span class="comment">/* for try and loop blocks */</span></div><div class="line">    PyObject *f_localsplus[<span class="number">1</span>];	<span class="comment">// 栈地址，大小为 本地变量+co_stacksize</span></div><div class="line">&#125; PyFrameObject;</div></pre></td></tr></table></figure>
+<p>对应的结构图</p>
+<p><img src="/blog/images/python_frame_structure.png" alt="image"></p>
+<p>当执行函数调用时会进入新的栈帧，那么当前栈帧就作为下一个栈帧的<code>f_back</code>字段。</p>
+<p><img src="/blog/images/python_frame_link.png" alt="image"></p>
+<p>多个栈帧链属于一个线程，而同时可能存在多个线程，每个线程拥有一个栈帧链。这样形成了Python的虚拟机运行环境。</p>
+<p><img src="/blog/images/python_runtime_env.png" alt="image"></p>
+<h2 id="Python执行字节码"><a href="#Python执行字节码" class="headerlink" title="Python执行字节码"></a>Python执行字节码</h2><hr>
+<p>字节码的执行就像上图所示，由一个大的循环和选择语句构成，逻辑骨干比较简单。</p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span>(;;;) &#123;</div><div class="line"></div><div class="line">    <span class="keyword">switch</span>(opcode) &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">case</span> <span class="number">100</span>:   <span class="meta"># LOAD_CONST</span></div><div class="line">    &#123;</div><div class="line">      x = POP()</div><div class="line">      ...    <span class="comment">// 执行的具体操作</span></div><div class="line">      <span class="keyword">break</span>;</div><div class="line">    &#125;;</div><div class="line">    </div><div class="line">    <span class="keyword">case</span> <span class="number">101</span>:   <span class="meta"># LOAD_NAME</span></div><div class="line">    &#123;</div><div class="line">      ...</div><div class="line">      <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">    ...</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>接下来，我们通过反编译代码追踪其如何一步步执行。</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"># 字节码的反编译</div><div class="line">  <span class="number">4</span>           <span class="number">0</span> LOAD_CONST               <span class="number">1</span> (<span class="number">2</span>)</div><div class="line">              <span class="number">3</span> STORE_DEREF              <span class="number">0</span> (c)</div><div class="line"></div><div class="line">  <span class="number">6</span>           <span class="number">6</span> LOAD_CONST               <span class="number">2</span> (<span class="number">3</span>)</div><div class="line">              <span class="number">9</span> LOAD_CLOSURE             <span class="number">0</span> (c)</div><div class="line">             <span class="number">12</span> BUILD_TUPLE              <span class="number">1</span></div><div class="line">             <span class="number">15</span> LOAD_CONST               <span class="number">3</span> (&lt;code object inner at <span class="number">00000000039E69</span>B0, ...&gt;)</div><div class="line">             <span class="number">18</span> MAKE_CLOSURE             <span class="number">1</span></div><div class="line">             <span class="number">21</span> STORE_FAST               <span class="number">4</span> (inner)</div><div class="line">             <span class="number">24</span> LOAD_CONST               <span class="number">0</span> (None)</div><div class="line">             <span class="number">27</span> RETURN_VALUE</div></pre></td></tr></table></figure>
+<p>通过追踪每个指令码的执行过程以及对应的<code>PyFrameObject</code>的栈帧变化，可以一步步看到虚拟机的执行过程。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div></pre></td><td class="code"><pre><div class="line"><span class="function">PyObject *</span></div><div class="line"><span class="title">PyEval_EvalFrame</span><span class="params">(PyFrameObject *f)</span> &#123;</div><div class="line"></div><div class="line">    co = f-&gt;f_code;</div><div class="line">    names = co-&gt;co_names;</div><div class="line">    consts = co-&gt;co_consts;</div><div class="line">    fastlocals = f-&gt;f_localsplus;</div><div class="line">    <span class="comment">// freevars在内存中对应的不是f-&gt;f_freevars，而是f-&gt;f_cellvars</span></div><div class="line">    freevars = f-&gt;f_localsplus + co-&gt;co_nlocals;</div><div class="line">    first_instr = (<span class="keyword">unsigned</span> <span class="keyword">char</span>*) PyString_AS_STRING(co-&gt;co_code);</div><div class="line">    <span class="comment">// f-&gt;f_lasti默认值为-1</span></div><div class="line">    next_instr = first_instr + f-&gt;f_lasti + <span class="number">1</span>;</div><div class="line">    <span class="comment">// 执行栈顶</span></div><div class="line">    stack_pointer = f-&gt;f_stacktop;</div><div class="line"></div><div class="line">    <span class="keyword">for</span> (;;) &#123;</div><div class="line">    </div><div class="line">        fast_next_opcode:</div><div class="line">            f-&gt;f_lasti = INSTR_OFFSET();</div><div class="line">        </div><div class="line">            opcode = NEXTOP();    <span class="comment">// 获取字节码</span></div><div class="line">            oparg = <span class="number">0</span>;   </div><div class="line">            <span class="keyword">if</span> (HAS_ARG(opcode))  <span class="comment">// 如果字节码有参数，获取参数</span></div><div class="line">                oparg = NEXTARG();</div><div class="line"></div><div class="line">            TARGET(LOAD_CONST)    <span class="comment">// 0, 6, 24 行反编译指令LOAD_CONST</span></div><div class="line">        &#123;</div><div class="line">            x = GETITEM(consts, oparg);   <span class="comment">// 从const中获取值压栈</span></div><div class="line">            Py_INCREF(x);</div><div class="line">            PUSH(x);                      </div><div class="line">            FAST_DISPATCH();              <span class="comment">// goto fast_next_opcode</span></div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        ...</div><div class="line">        </div><div class="line">        </div><div class="line">        TARGET(STORE_DEREF)        <span class="comment">// 3</span></div><div class="line">        &#123;</div><div class="line">            w = POP();                   <span class="comment">// 从栈中取值，设置为CellObejct的值</span></div><div class="line">            x = freevars[oparg];         </div><div class="line">            PyCell_Set(x, w);            </div><div class="line">            Py_DECREF(w);</div><div class="line">            DISPATCH();</div><div class="line">        &#125;</div></pre></td></tr></table></figure>
+<p>初始化以及分别执行<code>0</code>和<code>3</code>字节码的<code>PyFrameObject</code>结构变化。</p>
+<ul>
+<li>LOAD_CONST 将co_consts中对应的值压栈</li>
+<li>STORE_DEREF 解引用，设置栈中的变量值</li>
+</ul>
+<p><img src="/blog/images/python_frame_run_1.jpg" alt="image"></p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div></pre></td><td class="code"><pre><div class="line">TARGET(LOAD_CLOSURE)       <span class="comment">// 9</span></div><div class="line">&#123;</div><div class="line">    x = freevars[oparg];     </div><div class="line">    Py_INCREF(x);</div><div class="line">    <span class="keyword">PUSH</span>(x);</div><div class="line">    <span class="keyword">if</span> (x != <span class="built_in">NULL</span>) DISPATCH();</div><div class="line">    <span class="keyword">break</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">TARGET(BUILD_TUPLE)       <span class="comment">// 12</span></div><div class="line">&#123;</div><div class="line">    x = PyTuple_New(oparg);      <span class="comment">// 创建一个元组，并且将栈中的元素设置为元组的元素</span></div><div class="line">    <span class="keyword">if</span> (x != <span class="built_in">NULL</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (; --oparg &gt;= <span class="number">0</span>;) &#123;</div><div class="line">            w = <span class="keyword">POP</span>();</div><div class="line">            PyTuple_SET_ITEM(x, oparg, w);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">PUSH</span>(x);</div><div class="line">        DISPATCH();</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">break</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">TARGET(MAKE_CLOSURE)     <span class="comment">// 18</span></div><div class="line">&#123;</div><div class="line">    v = <span class="keyword">POP</span>(); <span class="comment">/* code object */</span></div><div class="line">    x = PyFunction_New(v, f-&gt;f_globals);    <span class="comment">// 创建函数</span></div><div class="line">    Py_DECREF(v);</div><div class="line">    <span class="keyword">if</span> (x != <span class="built_in">NULL</span>) &#123;</div><div class="line">        v = <span class="keyword">POP</span>();</div><div class="line">        <span class="keyword">if</span> (PyFunction_SetClosure(x, v) != <span class="number">0</span>) &#123;</div><div class="line">            <span class="comment">/* Can't happen unless bytecode is corrupt. */</span></div><div class="line">            why = WHY_EXCEPTION;</div><div class="line">        &#125;</div><div class="line">        Py_DECREF(v);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (x != <span class="built_in">NULL</span> &amp;&amp; oparg &gt; <span class="number">0</span>) &#123;</div><div class="line">        v = PyTuple_New(oparg);</div><div class="line">        <span class="keyword">if</span> (v == <span class="built_in">NULL</span>) &#123;</div><div class="line">            Py_DECREF(x);</div><div class="line">            x = <span class="built_in">NULL</span>;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">while</span> (--oparg &gt;= <span class="number">0</span>) &#123;</div><div class="line">            w = <span class="keyword">POP</span>();</div><div class="line">            PyTuple_SET_ITEM(v, oparg, w);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (PyFunction_SetDefaults(x, v) != <span class="number">0</span>) &#123;</div><div class="line">            <span class="comment">/* Can't happen unless</span></div><div class="line">               PyFunction_SetDefaults changes. */</div><div class="line">            why = WHY_EXCEPTION;</div><div class="line">        &#125;</div><div class="line">        Py_DECREF(v);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">PUSH</span>(x);</div><div class="line">    <span class="keyword">break</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>LOAD_CLOSURE 将freevars中的对象压栈</li>
+<li>BUILD_TUPLE 用栈帧中的元素创建元组，并压栈</li>
+<li>BUILD_CLOSURE 创建PyFunction对象，并设置其中的<code>f_closure</code>域</li>
+</ul>
+<p><img src="/blog/images/python_frame_run_2.jpg" alt="image"></p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">        </div><div class="line">        TARGET(STORE_FAST)     <span class="comment">// 21</span></div><div class="line">        &#123;</div><div class="line">            v = <span class="keyword">POP</span>();             <span class="comment">// 设置locals值</span></div><div class="line">            SETLOCAL(oparg, v);</div><div class="line">            FAST_DISPATCH();</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        TARGET_NOARG(RETURN_VALUE)  <span class="comment">// 27</span></div><div class="line">        &#123;</div><div class="line">            retval = <span class="keyword">POP</span>();</div><div class="line">            why = WHY_RETURN;</div><div class="line">            <span class="keyword">goto</span> fast_block_end;</div><div class="line">        &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><img src="/blog/images/python_frame_run_3.jpg" alt="image"></p>
+<ul>
+<li>STORE_FAST 将栈中的一个元素设置到对应的本地变量域中</li>
+<li>RETURN_VALUE return，并且设置退出原因<code>WHY_RETURN</code></li>
+</ul>
+<p>从上面的代码和过程图，整个代码的执行过程清楚的显现出来：）</p>
+<p>(完）</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016-11-07-python-pycode_and_frame.html"
+           data-title="python源码剖析-字节码和虚拟机" data-url="http://fanchao01.github.io/blog/2016-11-07-python-pycode_and_frame.html">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">36</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Python中的伪码PyCodeObject"><span class="nav-number">1.</span> <span class="nav-text">Python中的伪码PyCodeObject</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PyCodeObject的示例"><span class="nav-number">2.</span> <span class="nav-text">PyCodeObject的示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PyFrameObject"><span class="nav-number">3.</span> <span class="nav-text">PyFrameObject</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python执行字节码"><span class="nav-number">4.</span> <span class="nav-text">Python执行字节码</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/blog/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
