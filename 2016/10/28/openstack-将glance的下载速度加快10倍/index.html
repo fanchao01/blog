@@ -86,26 +86,17 @@
 
 
 
-<meta name="description" content="（将一年之前解决的问题再梳理下）
-背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
-
-在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta name="description" content="如何更快的从glance上下载镜像">
 <meta property="og:type" content="article">
 <meta property="og:title" content="10X优化glance镜像下载速率">
 <meta property="og:url" content="http://fanchao01.github.io/blog/2016/10/28/openstack-将glance的下载速度加快10倍/index.html">
 <meta property="og:site_name" content="Blog My Minds">
-<meta property="og:description" content="（将一年之前解决的问题再梳理下）
-背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
-
-在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta property="og:description" content="如何更快的从glance上下载镜像">
 <meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/openstack_glance_flow.jpg">
-<meta property="og:updated_time" content="2016-10-31T04:05:30.370Z">
+<meta property="og:updated_time" content="2016-11-13T05:43:51.169Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="10X优化glance镜像下载速率">
-<meta name="twitter:description" content="（将一年之前解决的问题再梳理下）
-背景知识Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。
-
-在用sheepdog作为存储后端的时候，发现下载速度非常慢只有10~20Mb/s，一般应该能够打满内网的千兆网卡达到100+Mb/s才对。在一番探究下终于找到问题所在。原来是oslo_concu">
+<meta name="twitter:description" content="如何更快的从glance上下载镜像">
 <meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/openstack_glance_flow.jpg">
 
 

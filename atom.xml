@@ -5,7 +5,7 @@
   <link href="/blog/atom.xml" rel="self"/>
   
   <link href="http://fanchao01.github.io/blog/"/>
-  <updated>2016-11-13T05:30:31.356Z</updated>
+  <updated>2016-11-13T05:43:23.043Z</updated>
   <id>http://fanchao01.github.io/blog/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://fanchao01.github.io/blog/2016/11/13/python-pycode_and_frame/"/>
     <id>http://fanchao01.github.io/blog/2016/11/13/python-pycode_and_frame/</id>
     <published>2016-11-13T08:00:00.000Z</published>
-    <updated>2016-11-13T05:30:31.356Z</updated>
+    <updated>2016-11-13T05:43:23.043Z</updated>
     
     <content type="html"><![CDATA[<p>Python会将代码先编译成字节码，然后在虚拟机中动态得依次解释执行字节码。编译好的字节码存储在硬盘中以<code>.pyc</code>、<code>.pyd</code>等为扩展名。而在运行态，这些字节码会作为Python的一种对象<code>PyCodeObject</code>存在。<code>PyCodeObject</code>可以理解为C语言中的文本段，用于存储编译后的字节码、调试信息、常量值、变量名等。</p>
 <p>本文不会讲述代码如何一步步编译成<code>PyCodeObject</code>，只会简单介绍<code>PyCodeObject</code>中各个域的含义，而把重点放在介绍Python的虚拟机和执行流。</p>
@@ -113,7 +113,7 @@
     <link href="http://fanchao01.github.io/blog/2016/10/28/openstack-%E5%B0%86glance%E7%9A%84%E4%B8%8B%E8%BD%BD%E9%80%9F%E5%BA%A6%E5%8A%A0%E5%BF%AB10%E5%80%8D/"/>
     <id>http://fanchao01.github.io/blog/2016/10/28/openstack-将glance的下载速度加快10倍/</id>
     <published>2016-10-28T07:00:00.000Z</published>
-    <updated>2016-10-31T04:05:30.370Z</updated>
+    <updated>2016-11-13T05:43:51.169Z</updated>
     
     <content type="html"><![CDATA[<p>（将一年之前解决的问题再梳理下）</p>
 <h2 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h2><p>Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。</p>
@@ -155,8 +155,7 @@
     
     <summary type="html">
     
-      &lt;p&gt;（将一年之前解决的问题再梳理下）&lt;/p&gt;
-&lt;h2 id=&quot;背景知识&quot;&gt;&lt;a href=&quot;#背景知识&quot; class=&quot;headerlink&quot; title=&quot;背景知识&quot;&gt;&lt;/a&gt;背景知识&lt;/h2&gt;&lt;p&gt;Glance是openstack中管理镜像的服务，主要用于上传和下载镜像文件
+      如何更快的从glance上下载镜像
     
     </summary>
     
