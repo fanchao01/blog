@@ -1,92 +1,11 @@
-<!doctype html>
-
-
-
-  
-
-
-<html class="theme-next mist use-motion">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-
-
-
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-
-
-
-
-
-
-
-
-
-
-
+  <meta charset="utf-8">
   
-  
-  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
-
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-    
-    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  
-
-
-
-
-
-
-<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
-
-<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
-
-
-  <meta name="keywords" content="Hexo, NexT" />
-
-
-
-
-
-  <link rel="alternate" href="/blog/atom.xml" title="Blog My Minds" type="application/atom+xml" />
-
-
-
-
-  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
-
-
-
-
-
-
-<meta name="description" content="对简单操作模型的理解
+  <title>Unix中的几种I/O模型 | Blog My Minds</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="对简单操作模型的理解
 堵塞与非堵塞
 堵塞(blocking):
 调用者(caller)必须等待操作完成才能返回。操作完成可能是异常、失败、返回空数据、返回不完整数据等。
@@ -131,223 +50,79 @@
 
 无论是堵塞或者非堵塞，都可能返回空的数据，都需要数据从内核缓存区到用户缓存区的拷贝时间。堵塞操作可能因">
 <meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/asyncio.gif">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog My Minds" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/blog/css/style.css">
+  
 
-
-
-<script type="text/javascript" id="hexo.configuration">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    scheme: 'Mist',
-    sidebar: {"position":"left","display":"post"},
-    fancybox: true,
-    motion: true,
-    duoshuo: {
-      userId: 0,
-      author: '博主'
-    }
-  };
-</script>
-
-
-
-
-  <link rel="canonical" href="http://fanchao01.github.io/blog/2015/02/06/note-asynchrounous/"/>
-
-  <title> Unix中的几种I/O模型 | Blog My Minds </title>
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
-
-  
-
-
-
-  <script type="text/javascript">
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
-  </script>
-
-
-
-
-
-
-
-
-  
-  
-    
-  
-
-  <div class="container one-collumn sidebar-position-left page-post-detail ">
-    <div class="headband"></div>
-
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-meta ">
-  
-
-  <div class="custom-logo-site-title">
-    <a href="/blog/"  class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
-      <span class="site-title">Blog My Minds</span>
-      <span class="logo-line-after"><i></i></span>
-    </a>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/blog/" id="logo">Blog My Minds</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/blog/">Home</a>
+        
+          <a class="main-nav-link" href="/blog/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://fanchao01.github.io/blog"></form>
+      </div>
+    </div>
   </div>
-  <p class="site-subtitle"></p>
-</div>
-
-<div class="site-nav-toggle">
-  <button>
-    <span class="btn-bar"></span>
-    <span class="btn-bar"></span>
-    <span class="btn-bar"></span>
-  </button>
-</div>
-
-<nav class="site-nav">
-  
-
-  
-    <ul id="menu" class="menu">
-      
-        
-        <li class="menu-item menu-item-home">
-          <a href="/blog/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            首页
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-categories">
-          <a href="/blog/categories" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
-            
-            分类
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-archives">
-          <a href="/blog/archives" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            归档
-          </a>
-        </li>
-      
-
-      
-    </ul>
-  
-
-  
-</nav>
-
- </div>
-    </header>
-
-    <main id="main" class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-note-asynchrounous" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/blog/2015/02/06/note-asynchrounous/" class="article-date">
+  <time datetime="2015-02-06T08:00:00.000Z" itemprop="datePublished">2015-02-06</time>
+</a>
     
+  <div class="article-category">
+    <a class="article-category-link" href="/blog/categories/linux/">linux</a>
+  </div>
 
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
+  </div>
+  <div class="article-inner">
     
-      <header class="post-header">
-
+    
+      <header class="article-header">
         
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                Unix中的几种I/O模型
-              
-            
-          </h1>
-        
+  
+    <h1 class="article-title" itemprop="name">
+      Unix中的几种I/O模型
+    </h1>
+  
 
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-02-06T00:00:00-08:00" content="2015-02-06">
-              2015-02-06
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/linux/" itemprop="url" rel="index">
-                    <span itemprop="name">linux</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2015/02/06/note-asynchrounous/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/02/06/note-asynchrounous/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
       </header>
     
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
+    <div class="article-entry" itemprop="articleBody">
       
         <p><img src="/blog/images/asyncio.gif" alt="image"></p>
 <h2 id="对简单操作模型的理解"><a href="#对简单操作模型的理解" class="headerlink" title="对简单操作模型的理解"></a>对简单操作模型的理解</h2><hr>
@@ -443,313 +218,141 @@
 
       
     </div>
-
-    <div>
-      
-        
-
-      
-    </div>
-
-    <div>
-      
-        
-
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/blog/2015/01/19/python-tornado-utils/" rel="next" title="tornado中一些通用的函数和类">
-                <i class="fa fa-chevron-left"></i> tornado中一些通用的函数和类
-              </a>
-            
-          </div>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/blog/2015/04/13/python-flyweight/" rel="prev" title="python中的享元模式(flyweight)">
-                python中的享元模式(flyweight) <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
+    <footer class="article-footer">
+      <a data-url="http://fanchao01.github.io/blog/blog/2015/02/06/note-asynchrounous/" data-id="civjiit40000w53jxu628fowu" class="article-share-link">Share</a>
       
       
     </footer>
-  </article>
-
-
-
-    <div class="post-spread">
-      
-    </div>
   </div>
-
-
-          </div>
-          
-
-
-          
-  <div class="comments" id="comments">
-    
-      <div class="ds-thread" data-thread-key="2015/02/06/note-asynchrounous/"
-           data-title="Unix中的几种I/O模型" data-url="http://fanchao01.github.io/blog/blog/2015/02/06/note-asynchrounous/">
-      </div>
-    
-  </div>
-
-
-        </div>
-        
-          
   
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    
+<nav id="article-nav">
+  
+    <a href="/blog/2015/04/13/python-flyweight/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          python中的享元模式(flyweight)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/blog/2015/01/19/python-tornado-utils/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">tornado中一些通用的函数和类</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/blog/categories/OpenStack/">OpenStack</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/books/">books</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/language/">language</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/blog/categories/language/ruby/">ruby</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/linux/">linux</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/notes/">notes</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/blog/categories/notes/life/">life</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/openstack/">openstack</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/">python</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/design-pattern/">design-pattern</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/design-pattern/英文翻译/">英文翻译</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/django/">django</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/requests/">requests</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python/tornado/">tornado</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/python源码剖析/">python源码剖析</a></li><li class="category-list-item"><a class="category-list-link" href="/blog/categories/英文翻译/">英文翻译</a></li></ul>
     </div>
   </div>
 
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-inner">
 
-      
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/blog/tags/python/">python</a></li></ul>
+    </div>
+  </div>
 
-      
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
-            文章目录
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/blog/tags/python/" style="font-size: 10px;">python</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2016/11/">November 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2016/10/">October 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2016/08/">August 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2016/07/">July 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2016/02/">February 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2015/04/">April 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2015/02/">February 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2015/01/">January 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/12/">December 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/11/">November 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/10/">October 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/09/">September 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/08/">August 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/07/">July 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/05/">May 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2014/01/">January 2014</a></li><li class="archive-list-item"><a class="archive-list-link" href="/blog/archives/2013/12/">December 2013</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/blog/2016/11/13/python-pycode_and_frame/">python源码剖析-字节码和虚拟机</a>
           </li>
-          <li class="sidebar-nav-overview" data-target="site-overview">
-            站点概览
+        
+          <li>
+            <a href="/blog/2016/10/28/openstack-将glance的下载速度加快10倍/">10X优化glance镜像下载速率</a>
           </li>
-        </ul>
-      
-
-      <section class="site-overview sidebar-panel ">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/blog/images/avatar.gif"
-               alt="FanChao" />
-          <p class="site-author-name" itemprop="name">FanChao</p>
-          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
-        </div>
-        <nav class="site-state motion-element">
-          <div class="site-state-item site-state-posts">
-            <a href="/blog/archives">
-              <span class="site-state-item-count">36</span>
-              <span class="site-state-item-name">日志</span>
-            </a>
-          </div>
-
-          
-            <div class="site-state-item site-state-categories">
-              <a href="/blog/categories">
-                <span class="site-state-item-count">17</span>
-                <span class="site-state-item-name">分类</span>
-              </a>
-            </div>
-          
-
-          
-            <div class="site-state-item site-state-tags">
-              
-                <span class="site-state-item-count">1</span>
-                <span class="site-state-item-name">标签</span>
-              
-            </div>
-          
-
-        </nav>
-
         
-          <div class="feed-link motion-element">
-            <a href="/blog/atom.xml" rel="alternate">
-              <i class="fa fa-rss"></i>
-              RSS
-            </a>
-          </div>
+          <li>
+            <a href="/blog/2016/10/26/notes-howtodisagree/">如何反驳-HowToDisagree</a>
+          </li>
         
-
-        <div class="links-of-author motion-element">
-          
-        </div>
-
+          <li>
+            <a href="/blog/2016/10/24/python-setobject/">Python源码剖析—Set容器</a>
+          </li>
         
+          <li>
+            <a href="/blog/2016/10/23/python-signal/">Python源码剖析—信号处理机制</a>
+          </li>
         
-
-        
-        
-
-      </section>
-
-      
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-            
-              
-            
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#对简单操作模型的理解"><span class="nav-number">1.</span> <span class="nav-text">对简单操作模型的理解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞与非堵塞"><span class="nav-number">1.1.</span> <span class="nav-text">堵塞与非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步与异步"><span class="nav-number">1.2.</span> <span class="nav-text">同步与异步</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对简单模型的类比"><span class="nav-number">2.</span> <span class="nav-text">对简单模型的类比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞模型"><span class="nav-number">2.1.</span> <span class="nav-text">堵塞模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非堵塞模型"><span class="nav-number">2.2.</span> <span class="nav-text">非堵塞模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步模型"><span class="nav-number">2.3.</span> <span class="nav-text">同步模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步模型"><span class="nav-number">2.4.</span> <span class="nav-text">异步模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步堵塞"><span class="nav-number">2.5.</span> <span class="nav-text">同步堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步非堵塞"><span class="nav-number">2.6.</span> <span class="nav-text">同步非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步堵塞"><span class="nav-number">2.7.</span> <span class="nav-text">异步堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步非堵塞"><span class="nav-number">2.8.</span> <span class="nav-text">异步非堵塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步的几种接口"><span class="nav-number">2.9.</span> <span class="nav-text">异步的几种接口</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Unix下的几种IO模型"><span class="nav-number">3.</span> <span class="nav-text">Unix下的几种IO模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#堵塞I-O模型"><span class="nav-number">3.1.</span> <span class="nav-text">堵塞I/O模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非堵塞I-O模型"><span class="nav-number">3.2.</span> <span class="nav-text">非堵塞I/O模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#I-O多路复用"><span class="nav-number">3.3.</span> <span class="nav-text">I/O多路复用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步I-O"><span class="nav-number">3.4.</span> <span class="nav-text">异步I/O</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完整的I-O模型定义"><span class="nav-number">4.</span> <span class="nav-text">完整的I/O模型定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几种不同I-O模型的异同"><span class="nav-number">5.</span> <span class="nav-text">几种不同I/O模型的异同</span></a></li></ol></div>
-            
-          </div>
-        </section>
-      
-
-    </div>
-  </aside>
-
-
-        
-      </div>
-    </main>
-
-    <footer id="footer" class="footer">
-      <div class="footer-inner">
-        <div class="copyright" >
-  
-  &copy; 
-  <span itemprop="copyrightYear">2016</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">FanChao</span>
-</div>
-
-<div class="powered-by">
-  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
-</div>
-
-<div class="theme-info">
-  主题 -
-  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
-    NexT.Mist
-  </a>
-</div>
-
-        
-
-        
-      </div>
-    </footer>
-
-    <div class="back-to-top">
-      <i class="fa fa-arrow-up"></i>
+      </ul>
     </div>
   </div>
 
   
-
-<script type="text/javascript">
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
-  }
-</script>
-
-
-
-
-
-
-
-
-
+</aside>
+        
+      </div>
+      <footer id="footer">
   
-
-
-
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2016 FanChao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
   
-  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
-
+    <a href="/blog/" class="mobile-nav-link">Home</a>
   
-  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-
+    <a href="/blog/archives" class="mobile-nav-link">Archives</a>
   
-  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-
-  
-  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
-
-
-  
-
-
-  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
-
-  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
-
-
-
-  
-  
-
-  
-  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
-<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
-
-
-
-  
-
-
-  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
-
-
-
-  
-
-  
+</nav>
     
-  
 
-  <script type="text/javascript">
-    var duoshuoQuery = {short_name:"fanchao01"};
-    (function() {
-      var ds = document.createElement('script');
-      ds.type = 'text/javascript';ds.async = true;
-      ds.id = 'duoshuo-script';
-      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-      ds.charset = 'UTF-8';
-      (document.getElementsByTagName('head')[0]
-      || document.getElementsByTagName('body')[0]).appendChild(ds);
-    })();
-  </script>
-
-  
-    
-    <script src="/blog/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
-    <script src="/blog/js/src/hook-duoshuo.js"></script>
-  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 
+  <link rel="stylesheet" href="/blog/fancybox/jquery.fancybox.css">
+  <script src="/blog/fancybox/jquery.fancybox.pack.js"></script>
 
 
+<script src="/blog/js/script.js"></script>
 
-
-  
-  
-
-  
-
-  
-
-  
-
+  </div>
 </body>
 </html>
