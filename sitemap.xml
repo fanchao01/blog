@@ -2,16 +2,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://fanchao01.github.io/blog/blog/2016/11/13/python-pycode_and_frame/</loc>
+    <loc>http://fanchao01.github.io/blog/blog/2017/09/27/palcement-in-pike/</loc>
     
-    <lastmod>2016-11-13T05:49:23.302Z</lastmod>
+    <lastmod>2017-09-29T09:41:17.205Z</lastmod>
     
   </url>
   
   <url>
     <loc>http://fanchao01.github.io/blog/blog/2016/10/28/openstack-%E5%B0%86glance%E7%9A%84%E4%B8%8B%E8%BD%BD%E9%80%9F%E5%BA%A6%E5%8A%A0%E5%BF%AB10%E5%80%8D/</loc>
     
-    <lastmod>2016-11-13T05:43:51.169Z</lastmod>
+    <lastmod>2017-09-29T09:39:01.770Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://fanchao01.github.io/blog/blog/2016/02/27/openstack-eventlet2/</loc>
+    
+    <lastmod>2017-09-29T09:39:01.717Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://fanchao01.github.io/blog/blog/2016/10/26/notes-howtodisagree/</loc>
+    
+    <lastmod>2017-09-29T09:12:25.751Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://fanchao01.github.io/blog/blog/2016/11/13/python-pycode_and_frame/</loc>
+    
+    <lastmod>2016-11-17T11:52:13.510Z</lastmod>
     
   </url>
   
@@ -19,13 +40,6 @@
     <loc>http://fanchao01.github.io/blog/blog/2013/12/30/hello_world/</loc>
     
     <lastmod>2016-10-28T08:14:40.516Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://fanchao01.github.io/blog/blog/2016/10/26/notes-howtodisagree/</loc>
-    
-    <lastmod>2016-10-26T10:00:45.282Z</lastmod>
     
   </url>
   
@@ -82,13 +96,6 @@
     <loc>http://fanchao01.github.io/blog/blog/2014/12/26/python-GIL/</loc>
     
     <lastmod>2016-10-18T03:36:34.908Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://fanchao01.github.io/blog/blog/2016/02/27/openstack-eventlet2/</loc>
-    
-    <lastmod>2016-08-25T04:05:00.000Z</lastmod>
     
   </url>
   

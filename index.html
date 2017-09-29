@@ -245,6 +245,128 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2017/09/27/palcement-in-pike/" itemprop="url">
+                  OpenStack-Pike版本中的资源管理与并发调度
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-09-27T00:00:00-07:00" content="2017-09-27">
+              2017-09-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/OpenStack/" itemprop="url" rel="index">
+                    <span itemprop="name">OpenStack</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2017/09/27/palcement-in-pike/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/09/27/palcement-in-pike/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          Pike版本中的Placement服务、资源管理与调度竞争问题
+          <div class="post-more-link text-center">
+            <a class="btn" href="/blog/2017/09/27/palcement-in-pike/">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2016/11/13/python-pycode_and_frame/" itemprop="url">
                   python源码剖析-字节码和虚拟机
                 </a>
@@ -273,8 +395,8 @@
               <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/python/" itemprop="url" rel="index">
-                    <span itemprop="name">python</span>
+                  <a href="/blog/categories/python源码剖析/" itemprop="url" rel="index">
+                    <span itemprop="name">python源码剖析</span>
                   </a>
                 </span>
 
@@ -395,8 +517,8 @@
               <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/openstack/" itemprop="url" rel="index">
-                    <span itemprop="name">openstack</span>
+                  <a href="/blog/categories/OpenStack/" itemprop="url" rel="index">
+                    <span itemprop="name">OpenStack</span>
                   </a>
                 </span>
 
@@ -558,82 +680,12 @@
 
       
         
-          
-            <p>(今天看了王垠大神的<a href="http://www.yinwang.org/blog-cn/2016/10/25/argument" target="_blank" rel="external">&lt;如何赢得技术争论&gt;</a>，决定把保罗·格雷厄姆的旧篇<howtodisagre>翻出来整理下，同时也将自己对争论的理解好好整理下）</howtodisagre></p>
-<p><img src="/blog/images/HowToDisagree_picture_tower.jpg" alt="image"></p>
-<h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><hr>
-<p>本篇是对《HOW TO DISAGREE》的简单笔记和一些理解，原文来自于<code>paul graham</code>的<a href="http://www.paulgraham.com/disagree.html" title="HowToDisagree" target="_blank" rel="external">博客</a>，豆瓣有<a href="http://www.douban.com/note/291185421/" title="HowToDisagree_中文翻译_豆瓣" target="_blank" rel="external">中文翻译</a>，其中的图片也源自于此。</p>
-<p>文章主要讨论反驳其他人时的一些形式（误区），例如辱骂、贴标签等。有些是反驳别人时需要避免的又是看待别人的反驳时需要小心的，有些是我们如何进行正确反驳的。总之，对待意见和评论，要看其论据是否合理而非结论论点。让我们一起看看这些典型的反驳形式(误区）：</p>
-<h3 id="DH0-Name-calling-贴标签"><a href="#DH0-Name-calling-贴标签" class="headerlink" title="DH0.Name-calling 贴标签"></a>DH0.Name-calling 贴标签</h3><hr>
-<p><code>Name-calling</code>可以翻译成<code>辱骂</code>或者<code>侮辱</code>，但是我觉的更恰当的翻译是<code>贴标签</code>。简单的字面意思就是用一个大家公知的有特殊含义的名字(name)来代称(calling)别人。文中指出了两种典型的辱骂式的反驳：</p>
-<pre><code>你个臭同性恋
-</code></pre><p>或者不是那么明显的：</p>
-<pre><code>作者是个自以为是的半吊子
-</code></pre><p>大多数情况下出于反驳对方的需要给对方贴上带有蔑称的标签。在网上经常我们看见的反对评论是：</p>
-<pre><code>你个五毛党
-你个美粉
-真是个砖家
-这个有奶就是娘的家伙
-臭不要脸
-你个婊子
-...
-</code></pre><p>这种贴标签式的反驳的主要表现就是，只有标签本身而没有摆出事实证据，除了表达反驳者的气愤之外没有丝毫价值。</p>
-<h3 id="DH1-Ad-Hominem-人身攻击"><a href="#DH1-Ad-Hominem-人身攻击" class="headerlink" title="DH1.Ad Hominem 人身攻击"></a>DH1.Ad Hominem 人身攻击</h3><hr>
-<p>排在金字塔第二位的是人身攻击，有时甚至比贴标签本身还要严重，比如一个参议员说参议员的工资比较低，有人会反驳攻击道：</p>
-<pre><code>当然他会这么说，他就是个参议员
-</code></pre><p>针对个人的身份而非观点进行反驳是非常有效的一种手段。相对的我们有个中国版本，公务员说公务员的工资低需要提高，我们很自然的反映是：</p>
-<pre><code>我要是公务员，我也说公务员工资低
-</code></pre><p>而不是仔细思考公务员工资低这个事实是否存在，如果存在是否有提高的必要。</p>
-<p>但是，我发现矛盾的地方在于，如果提出建议的人的个人身份与事件完全相反时又会遇见这样的版本：</p>
-<pre><code>他懂个屁，他就一农民工
-你瞎操什么心，你又不是老板、大大、他爸、他妈...
-</code></pre><p>当然，作者也发现了这种现象，并且表示不要忽略来自外面的声音，因为创新往往来自外旁观者。</p>
-<h3 id="DH2-Responding-to-Tone-针对态度"><a href="#DH2-Responding-to-Tone-针对态度" class="headerlink" title="DH2.Responding to Tone 针对态度"></a>DH2.Responding to Tone 针对态度</h3><hr>
-<p>接下来的层次，反驳者开始针对文章本身而非作者，其中最低级的形式是针对作者的态度（作者表达出来的情感），例如：</p>
-<pre><code>我不敢相信作者对人工智能如此不屑一顾
-</code></pre><p>或者，我们经常在网上看到这样的版本（水军们最喜欢的方式之一）：</p>
-<pre><code>这么夸这个手机，软文吧！ （针对态度贴上标签）
-</code></pre><p>反驳应该针对事情本身，而非作者表达的态度。而且态度是个很难界定的概念，一个人觉的强硬的态度对另外的人可能很温柔。当然，实际上很多表达观点的人会容易受到自身感官的影响，或者有的时候表达观点只是想表达自己的态度而已。</p>
-<h3 id="DH3-Contradiction-反驳"><a href="#DH3-Contradiction-反驳" class="headerlink" title="DH3.Contradiction 反驳"></a>DH3.Contradiction 反驳</h3><hr>
-<p>在这个层次，反驳者终于对别人真正说的内容进行反驳，而非针对怎样说的或者谁说的。这种反驳中最低级的形式是只表达了一个相反的个例，而很少或者没有支持的证据，还经常和DH2一起出现：</p>
-<pre><code>我不敢相信作者对人工智能如此不屑一顾。人工智能是正统的科学理论。
-</code></pre><p>这种反驳有时候会有用。陈述反例能够证明自己的正确性，如果有更多的证据支持会更好。</p>
-<h3 id="DH4-Counterargument-驳斥观点"><a href="#DH4-Counterargument-驳斥观点" class="headerlink" title="DH4.Counterargument 驳斥观点"></a>DH4.Counterargument 驳斥观点</h3><hr>
-<p>第四个层次确实表达出了正确的反对：驳斥观点。在这之上的层次可以忽略，因为什么也没有表达。驳斥观点确实证明了一些东西，它的问题是往往表述不清。反驳观点确实表达了反对意见，并且附有原因和证据。但普遍的情况是反驳的观点与原作者的观点稍微不同，结果两个人辩论了半天实际上说的不是一样的东西。</p>
-<p>这种现象的实际发生，我觉的有时是因为反对而反对。为了表明反对者的立场或者站位，要明显反对对方的立场，那么对方说什么而反对者反驳什么也就无关紧要了。</p>
-<p>简单来说，如果要驳斥对方的观点而又觉的对方的观点没有抓住事情的本质时，反驳方可以稍微偏离对方的观点，但是需要提前说清楚。</p>
-<pre><code>我不太同意你的观点，因为我觉的你偏离了主题...
-</code></pre><h3 id="DH5-Refutation-反驳原文"><a href="#DH5-Refutation-反驳原文" class="headerlink" title="DH5.Refutation 反驳原文"></a>DH5.Refutation 反驳原文</h3><hr>
-<p>最令人信服的反驳方式是“针对原文反驳”。在现实中这种很少，因为这很伤筋费神。反驳层次是一个金字塔，越高级（正确）的反驳，现实中越少。</p>
-<p>这种反驳，你必须引用原文找到“枪口”—认为不正确的部分—引用这部分并且解释为什么这部分是错误的。如果你反对对方，却找不到这种对方错误的部分，那么有可能你反对的只是你认为的假想敌。</p>
-<p>“针对原文反驳”需要引用，但是引用原文并不总是意味反对是正确的。一些人会引用一些原文来证明他是在“针对原文反驳”，但实际上他可能DH3式的，甚至是DH0式的反驳。</p>
-<p>我觉的还有另外一种情况就是断章取义，只引用部分有歧义的文章而去掉了背景。比如说，媒体工作者，特别是娱乐媒体工作者善于此道。</p>
-<p>我们有一个正面的非常有名引用例证：</p>
-<pre><code>吾生也有涯，而知也无涯。
-</code></pre><p>用于告诫要好好学习，但是完整的句子是：</p>
-<pre><code>吾生也有涯，而知也无涯。以有涯随无涯，殆己。
-</code></pre><p>不论是为了反对别人，还是证明自己而引用都有断章取义的情况存在。</p>
-<h3 id="DH6-Rrefuting-the-Central-Point-反驳核心观点"><a href="#DH6-Rrefuting-the-Central-Point-反驳核心观点" class="headerlink" title="DH6.Rrefuting the Central Point 反驳核心观点"></a>DH6.Rrefuting the Central Point 反驳核心观点</h3><hr>
-<p>“引用原文反驳”的强弱会根据引用的反驳内容而不同，最强烈的形式是反对核心观点。</p>
-<p>DH5这种很高级(正确）的反驳形式也可能出现问题。一些人会引用一些细枝末节、微不足道的错误来表达自己的反对。例如，引用一些错误的语法、不正确的标点符号等等。</p>
-<p>真正的反驳需要针对对方的核心观点，需要指出对方的核心观点是什么：</p>
-<pre><code>作者的主要观点是...，正如他说：
-
-    原文引用
-
-但这是错误的，因为...
-</code></pre><p>不必要复述对方的核心观点，只要说明对方观点是什么并针对该观点进行反驳即可。</p>
-<h3 id="反驳分层次的意义"><a href="#反驳分层次的意义" class="headerlink" title="反驳分层次的意义"></a>反驳分层次的意义</h3><hr>
-<p>对反驳分层次，可以帮助人们评判其阅读的东西，并且能够帮助识别一些错误的反对形式，或者用正确的形式表达自己的反对意见。另外，对反驳分层次可以使辩论变的愉快，因为越低级的反驳形式刻薄的词语越多，反之而越少。</p>
-<h3 id="对反驳（争论）的一些见解"><a href="#对反驳（争论）的一些见解" class="headerlink" title="对反驳（争论）的一些见解"></a>对反驳（争论）的一些见解</h3><hr>
-<p>除去科学研究中很严肃的正确错误之分（大多数情况下正误也很有局限性），现实生活很难有严格的正确和错误，或者说能够在短时间内证明正误的事情。在这种情况下，反驳别人是非常无趣的。一个人反驳别人往往有几种情况：</p>
-<p>第一种，反驳者为了表明立场。这种反驳（对原观点提出者）是没有意义的，因为当反驳者表达反对后，他的目的就达到了，他并不关心真正正确的是什么。这种情况在政治中很常见，例如，各种各样的公知辟谣等。</p>
-<p>第二种，反驳者为了说服对方。每个已经形成独立观点的人的观念是很难被推翻的，因为这是他存在的基础（他为了生活而形成的处事方式），如果被说服，他的人生就崩溃了。或者，你需要摆出明显的强大的事实在他眼前，传说的、媒体上的、没有发生在眼前的几乎都没有作用。</p>
-<p>第三种，反驳者为了反对而反对。这种形式往往隐藏着心理因素，例如反对者想表现自己、对反对本能的抵抗等。这种形式的反对没有任何意义，即不正确，也没有内涵。</p>
-<p>第四种，被反驳者没有足够接受不同意见的修养。接受不同意见甚至是反对声音需要足够的修养和人格魅力，这种人非常之少。</p>
-<p>因此，对待别人的观点需要看事实依据，任何对个人的不满、感情、身份等都不应该左右自己是否认同该观点。<br>对待别人的反驳也要看对方的反驳依据，任何对反驳的敌视、愤怒、固执都不应该左右自己是否认同该反驳。<br>反驳别人，以求真为基础，用事实和行为证明，还需看对方的修养，否则保留自己的意见即可。</p>
-
-          
+          如何反驳-HowToDisagree
+          <div class="post-more-link text-center">
+            <a class="btn" href="/blog/2016/10/26/notes-howtodisagree/">
+              阅读全文 &raquo;
+            </a>
+          </div>
         
       
     </div>
@@ -2200,7 +2252,7 @@
               
                 
                 <a class="post-title-link" href="/blog/2016/02/27/openstack-eventlet2/" itemprop="url">
-                  Openstack之Eventlet
+                  OpenStack之Eventlet
                 </a>
               
             
@@ -2350,178 +2402,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2015/12/14/openstack-eventlet/" itemprop="url">
-                  Evenlet的基础greenlet
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-12-14T00:00:00-08:00" content="2015-12-14">
-              2015-12-14
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/blog/categories/OpenStack/" itemprop="url" rel="index">
-                    <span itemprop="name">OpenStack</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2015/12/14/openstack-eventlet/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/14/openstack-eventlet/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="Eventlet的基础"><a href="#Eventlet的基础" class="headerlink" title="Eventlet的基础"></a>Eventlet的基础</h2><hr>
-<p>用官方的开场白介绍<a href="http://eventlet.net/" target="_blank" rel="external">eventlet</a>。eventlet是一个python并发（concurrent）网络库，能够在不改变编程方式的情况下，改变程序的运行方式。</p>
-<blockquote>
-<ul>
-<li>使用epoll\kequeue\libevent实现高伸缩性的非堵塞I/O。</li>
-<li>依靠协程（coroutines）,可以类似threading库那样采用堵塞式的编程模型，反而获得非堵塞I/O的收益。</li>
-<li>事件的分发(dispatch)是隐含式的，因此可以容易从底层使用Eventlet库，或者是作为大型程序的一个部分。</li>
-</ul>
-</blockquote>
-<p>在我的理解中，Eventlet的神奇之处在于两点：</p>
-<blockquote>
-<ul>
-<li>不改变编程模型，虽然底层是异步I/O，但是可以像堵塞式那样<code>正常</code>的编程，没有大量的嵌套回调。</li>
-<li>对于I/O事件是隐式分发的，就像使用threading库那样、甚至说比之还要方便；也无需大量的显式的协程调用，这点可以和tornado对比。</li>
-</ul>
-</blockquote>
-<h2 id="eventlet的底层greenlet"><a href="#eventlet的底层greenlet" class="headerlink" title="eventlet的底层greenlet"></a>eventlet的底层greenlet</h2><p>说起eventlet总也离不开其底层依赖的greenlet这个Python的协程库。这里不讨论greenlet的实现，只强调greenlet的几个特性。</p>
-<p>协程的意思就是相互协助的程序。它与线程的区别是，协程之间的运行顺序是由程序本身确定的，而不是由内核决定；协程拥有自己独立的栈，可以随时终止和继续运行。</p>
-<p>下面先提供一个实际的例子，然后分析greenlet的几个接口，再回过头说明这个例子的输出。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> time</div><div class="line"><span class="keyword">import</span> greenlet</div><div class="line"></div><div class="line">all_g = &#123;&#125;</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">format_print</span><span class="params">(*args)</span>:</span>    <span class="comment"># 打印当前协程、父协程、输出</span></div><div class="line">	<span class="keyword">global</span> all_g</div><div class="line">	current = greenlet.getcurrent()</div><div class="line">	<span class="keyword">print</span> <span class="string">'greenlet(%s), parent(%s): %s'</span> % (</div><div class="line">              all_g[id(current)], </div><div class="line">              all_g[id(current.parent)],</div><div class="line">              <span class="string">' '</span>.join(map(str, args)))</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run1</span><span class="params">(start)</span>:</span></div><div class="line">	format_print(<span class="string">'g1 begin, start'</span>, start)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):  <span class="comment"># 注意这里是循环2次</span></div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line">		start += <span class="number">1</span></div><div class="line">		start = g2.switch(start)</div><div class="line">		format_print(<span class="string">'start'</span>, start)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g1 end, start'</span>, start)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run2</span><span class="params">(start)</span>:</span></div><div class="line">	format_print(<span class="string">'g2 begin, start'</span>, start)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>):  <span class="comment"># 注意这里循环3次</span></div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line">		start += <span class="number">1</span></div><div class="line">		start = g1.switch(start)</div><div class="line">		format_print(<span class="string">'start'</span>, start)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g2 end, start'</span>, start)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run3</span><span class="params">(num)</span>:</span></div><div class="line">	format_print(<span class="string">'g3 begin, num'</span>, num)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(num):</div><div class="line">		format_print(<span class="string">'i'</span>, i)</div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line"></div><div class="line">	end = g2.switch(num+<span class="number">100</span>)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g3 end'</span>, end)</div><div class="line"></div><div class="line">g1 = greenlet.greenlet(run=run1, parent=greenlet.getcurrent())</div><div class="line">g2 = greenlet.greenlet(run=run2, parent=greenlet.getcurrent())</div><div class="line">g3 = greenlet.greenlet(run=run3, parent=g2)</div><div class="line"></div><div class="line">all_g[id(<span class="keyword">None</span>)] = <span class="string">'main'</span></div><div class="line">all_g[id(greenlet.getcurrent())] = <span class="string">'main'</span></div><div class="line">all_g[id(g1)] = <span class="string">'g1'</span></div><div class="line">all_g[id(g2)] = <span class="string">'g2'</span></div><div class="line">all_g[id(g3)] = <span class="string">'g3'</span></div><div class="line">g1.switch(<span class="number">0</span>)</div><div class="line">format_print(<span class="string">'back main after g1.switch'</span>)</div><div class="line"></div><div class="line">g3.switch(<span class="number">3</span>)</div><div class="line">format_print(<span class="string">'back main after g3.switch'</span>)</div><div class="line"></div><div class="line">format_print(g1.switch(<span class="string">'back g1 from main'</span>))</div><div class="line">format_print(g3.switch(<span class="string">'back g3 from main'</span>))</div></pre></td></tr></table></figure>
-<h3 id="greenlet-greenlet"><a href="#greenlet-greenlet" class="headerlink" title="greenlet.greenlet"></a>greenlet.greenlet</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">greenlet.greenlet(run=<span class="keyword">None</span>, parent=<span class="keyword">None</span>) =&gt; greenlet object</div><div class="line"></div><div class="line">run: 传入需要运行的函数，与`Thread`中的`target`相同</div><div class="line">parent: 转入协程的父协程，默认为当前协程</div></pre></td></tr></table></figure>
-<h3 id="父协程有什么用？"><a href="#父协程有什么用？" class="headerlink" title="父协程有什么用？"></a>父协程有什么用？</h3><p>父协程可以通过调用<code>greenlet.getcurrent().parent</code>得到，那么这里传入父协程有什么用处？</p>
-<p>简单的来说，父协程最大的用处在于，当前协程运行退出后，自动切换到父协程运行。换句话说，如果<code>parent=None</code>那么创建的协程退出后将自动切回到创建该协程的调用者中运行。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">    <span class="keyword">print</span> args, kwargs</div><div class="line">    <span class="keyword">print</span> <span class="string">'run over'</span></div><div class="line"></div><div class="line">parent = greenlet.greenlet(run=run)</div><div class="line">child = greenlet.greenlet(run=run, parent=parent)</div><div class="line">child.switch()</div><div class="line">&gt;&gt;</div><div class="line">(), &#123;&#125;</div><div class="line">run over</div><div class="line">(<span class="keyword">None</span>,), &#123;&#125;</div><div class="line">run over</div></pre></td></tr></table></figure>
-<p>我们可以看到<code>child</code>的参数和运行结束。然后自动切换到了父协程中运行。需要注意的是，当子线程运行结束自动切换到父协程时，会自动专递一个<code>None</code>参数。</p>
-<h3 id="为什么子协程退出切换到父协程时专递一个None参数"><a href="#为什么子协程退出切换到父协程时专递一个None参数" class="headerlink" title="为什么子协程退出切换到父协程时专递一个None参数"></a>为什么子协程退出切换到父协程时专递一个None参数</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_child</span><span class="params">(*args)</span>:</span></div><div class="line">    <span class="keyword">print</span> args</div><div class="line">    <span class="keyword">print</span> <span class="string">'child over'</span></div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_parent</span><span class="params">(*args)</span>:</span></div><div class="line">    <span class="keyword">print</span> args</div><div class="line">    rv = child.switch(<span class="string">'hi, child'</span>)</div><div class="line">    <span class="keyword">print</span> <span class="string">'Parent continue with:'</span>, rv</div><div class="line">    </div><div class="line">parent = greenlet.greenlet(run=run_parent)</div><div class="line">child = greenlet.greenlet(run=run_child, parent=parent)</div><div class="line">parent.switch()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line">()</div><div class="line">(<span class="string">'hi, child'</span>,)</div><div class="line">child over</div><div class="line">Parent <span class="keyword">continue</span> <span class="keyword">with</span>: <span class="keyword">None</span></div></pre></td></tr></table></figure>
-<p>我们可以看到，当子协程自然退出后，父协程通过<code>switch</code>获得了<code>None</code>参数。想一想，如果子协程不传递<code>None</code>参数，那么父协程就需要在<code>switch</code>处报错了。</p>
-<h3 id="如果一个协程永远不被调用switch会怎么样"><a href="#如果一个协程永远不被调用switch会怎么样" class="headerlink" title="如果一个协程永远不被调用switch会怎么样"></a>如果一个协程永远不被调用<code>switch</code>会怎么样</h3><p>一个协程如果没有被调用<code>switch</code>，那么他就永远不能运行。这点和线程完全不同，线程由内核调度，如果主线程自然退出，那么其他线程依然运行(非daemon的线程）。但是，在协程里如果主协程退出，或者进程在其他协程中退出，那么整个程序退出，其他协程没有运行的机会了。看一个官方的例子：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_g1</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="number">1</span>, <span class="number">2</span></div><div class="line">    g2.switch()</div><div class="line">    <span class="keyword">print</span> <span class="number">5</span>, <span class="number">6</span></div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_g2</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="number">3</span>, <span class="number">4</span></div><div class="line">    g1.switch()</div><div class="line">    <span class="keyword">print</span> <span class="number">7</span>, <span class="number">8</span></div><div class="line"></div><div class="line">g1 = greenlet.greenlet(run=run_g1)</div><div class="line">g2 = greenlet.greenlet(run=run_g2)</div><div class="line">g1.switch()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line"><span class="number">1</span>, <span class="number">2</span></div><div class="line"><span class="number">3</span>, <span class="number">4</span></div><div class="line"><span class="number">5</span>, <span class="number">6</span>    <span class="comment"># 结束</span></div></pre></td></tr></table></figure>
-<p>我们看到<code>7, 8</code>没有输出，因为g1的父协程是主协程，当g1运行结束后，自动切换到主协程，而主协程没有做任何动作就退出了。</p>
-<h3 id="greenlet-switch"><a href="#greenlet-switch" class="headerlink" title="greenlet.switch"></a>greenlet.switch</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">greenlet.switch(*args, **kargs)</div><div class="line">args: 不定参数</div><div class="line">kwargs: 位置参数</div></pre></td></tr></table></figure>
-<p><code>greenlet.switch</code>会导致程序切换到被调用的协程中运行。例如前几个例子中的<code>child.switch()</code>会切换到<code>child</code>协程中运行。</p>
-<h3 id="协程如何继续运行？"><a href="#协程如何继续运行？" class="headerlink" title="协程如何继续运行？"></a>协程如何继续运行？</h3><p>当<code>g.switch</code>被调用时，<code>g</code>在何处继续运行有三种情况：</p>
-<blockquote>
-<ul>
-<li>第一种情况，g没有运行，那么g在run入口处运行。传递的参数作为run的参数。</li>
-<li>第二种情况，g已经运行过，那么g在上次运行停止，也就是调用了otehr.switch而被切换出去的地方继续运行。</li>
-<li>第三种情况，g已经运行退出。那么g会直接返回，如果有参数传递，则直接返回参数</li>
-</ul>
-</blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="string">'over'</span></div><div class="line"></div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line"><span class="keyword">print</span> g.dead</div><div class="line"><span class="keyword">print</span> g.switch()</div><div class="line"><span class="keyword">print</span> g.dead</div><div class="line"><span class="keyword">print</span> g.switch(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">print</span> g.switch()</div><div class="line">&gt;&gt;&gt;</div><div class="line"><span class="keyword">False</span></div><div class="line">over</div><div class="line"><span class="keyword">True</span></div><div class="line">(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line">()</div></pre></td></tr></table></figure>
-<p>这里需要注意，当调用已经结束的协程时，会直接返回传递的参数或者是<code>()</code>，而不是之前的<code>None</code>。</p>
-<h3 id="greenlet-throw"><a href="#greenlet-throw" class="headerlink" title="greenlet.throw"></a>greenlet.throw</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">greenlet.throw([type, [val, [tb]]])</div><div class="line"></div><div class="line">type: 异常类型，例如TypeError 之类</div><div class="line">val: 传递给type的参数，例如‘type <span class="keyword">is</span> <span class="keyword">not</span> correct’</div><div class="line">tb: 传递给type的参数，异常的栈。</div></pre></td></tr></table></figure>
-<p><code>throw</code>调用类似<code>switch</code>调用，会立即转到调用的线程运行，并立即抛出异常，类似：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">raiser</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">raise</span> typ, val, tb</div><div class="line">g_raiser = greenlet(raiser, parent=g)</div><div class="line">g_raiser.switch()</div></pre></td></tr></table></figure>
-<p>如果<code>throw</code>没有参数，那么协程会抛出<code>greenlet.GreenletExit</code>。这个异常不会向上传递给父协程，相当于正常的退出。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        greenlet.getcurrent().parent.switch()</div><div class="line">    <span class="keyword">except</span> greenlet.GreenletExit:</div><div class="line">        <span class="keyword">print</span> <span class="string">'exit'</span></div><div class="line">        <span class="keyword">raise</span>       <span class="comment"># raise IOError 加入抛出其他异常，对比抛出GreenletExit</span></div><div class="line"></div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line">g.switch()</div><div class="line">ge = g.throw()  <span class="comment">#</span></div><div class="line"><span class="keyword">print</span> type(ge)</div><div class="line">&gt;&gt;&gt;</div><div class="line">exit</div><div class="line">greenlet.GreenletExit</div></pre></td></tr></table></figure>
-<p>需要注意到，子协程内部产生异常，从而打印<code>exit</code>。父协程获取到了子协程抛出的异常作为返回值，而不是继续抛出异常。所以，调用<code>throw()</code>是安全中断协程的方法。</p>
-<h3 id="第一个例子的输出"><a href="#第一个例子的输出" class="headerlink" title="第一个例子的输出"></a>第一个例子的输出</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">greenlet(g1), parent(main): g1 begin, start <span class="number">0</span></div><div class="line">greenlet(g2), parent(main): g2 begin, start <span class="number">1</span></div><div class="line">greenlet(g1), parent(main): start <span class="number">2</span></div><div class="line">greenlet(g2), parent(main): start <span class="number">3</span></div><div class="line">greenlet(g1), parent(main): start <span class="number">4</span></div><div class="line">greenlet(g1), parent(main): g1 end, start <span class="number">4</span>     <span class="comment"># g1运行结束，转到父协程(main）中运行</span></div><div class="line">greenlet(main), parent(main): back main after g1.switch</div><div class="line">greenlet(g3), parent(g2): g3 begin, num <span class="number">3</span>   </div><div class="line">greenlet(g3), parent(g2): i <span class="number">0</span></div><div class="line">greenlet(g3), parent(g2): i <span class="number">1</span></div><div class="line">greenlet(g3), parent(g2): i <span class="number">2</span>   </div><div class="line">greenlet(g2), parent(main): start <span class="number">103</span>   <span class="comment"># g3循环3次转到g2运行</span></div><div class="line">greenlet(main), parent(main): back main after g3.switch</div><div class="line">greenlet(main), parent(main): back g1 <span class="keyword">from</span> main <span class="comment"># g1运行已经结束，因此g1.switch()直接返回传递的参数</span></div><div class="line">greenlet(g3), parent(g2): g3 end back g3 <span class="keyword">from</span> main</div><div class="line">greenlet(g2), parent(main): start <span class="keyword">None</span>  <span class="comment"># g3运行结束，转回到父协程g2，因此获取的值为None</span></div><div class="line">greenlet(g2), parent(main): g2 end, start <span class="keyword">None</span></div><div class="line">greenlet(main), parent(main): <span class="keyword">None</span>  <span class="comment"># g2运行结束，因此获取的参数是None</span></div></pre></td></tr></table></figure>
-<p>从结果可知道，调用<code>g.switch</code>后返回的参数，是下次切换到本协程(其他协程调用本协程的<code>switch</code>或者<code>throww</code>）传递的参数，而与协程<code>g</code>没有关系。</p>
-<h3 id="协程与线程"><a href="#协程与线程" class="headerlink" title="协程与线程"></a>协程与线程</h3><p>假如在一个协程，切换到另一个线程中的协程会如何？</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> threading</div><div class="line"><span class="keyword">import</span> greenlet</div><div class="line"><span class="keyword">import</span> time</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="string">'run in thread'</span></div><div class="line">    </div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line">th = threaing.Thread(target=g.switch)</div><div class="line">th.start()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line">Traceback ...</div><div class="line">...</div><div class="line">error: cannot switch to a different thread</div></pre></td></tr></table></figure>
-<p>每个协程是依赖于栈空间的，而线程拥有独立的空间，当切换过去必然引起错误。<code>greenlet</code>也不允许这种切换</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2567,7 +2447,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">36</span>
+              <span class="site-state-item-count">37</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2575,7 +2455,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/blog/categories">
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -2628,7 +2508,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

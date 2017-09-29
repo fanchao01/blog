@@ -245,6 +245,178 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2015/12/14/openstack-eventlet/" itemprop="url">
+                  Evenlet的基础greenlet
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-12-14T00:00:00-08:00" content="2015-12-14">
+              2015-12-14
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/OpenStack/" itemprop="url" rel="index">
+                    <span itemprop="name">OpenStack</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/12/14/openstack-eventlet/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/14/openstack-eventlet/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="Eventlet的基础"><a href="#Eventlet的基础" class="headerlink" title="Eventlet的基础"></a>Eventlet的基础</h2><hr>
+<p>用官方的开场白介绍<a href="http://eventlet.net/" target="_blank" rel="external">eventlet</a>。eventlet是一个python并发（concurrent）网络库，能够在不改变编程方式的情况下，改变程序的运行方式。</p>
+<blockquote>
+<ul>
+<li>使用epoll\kequeue\libevent实现高伸缩性的非堵塞I/O。</li>
+<li>依靠协程（coroutines）,可以类似threading库那样采用堵塞式的编程模型，反而获得非堵塞I/O的收益。</li>
+<li>事件的分发(dispatch)是隐含式的，因此可以容易从底层使用Eventlet库，或者是作为大型程序的一个部分。</li>
+</ul>
+</blockquote>
+<p>在我的理解中，Eventlet的神奇之处在于两点：</p>
+<blockquote>
+<ul>
+<li>不改变编程模型，虽然底层是异步I/O，但是可以像堵塞式那样<code>正常</code>的编程，没有大量的嵌套回调。</li>
+<li>对于I/O事件是隐式分发的，就像使用threading库那样、甚至说比之还要方便；也无需大量的显式的协程调用，这点可以和tornado对比。</li>
+</ul>
+</blockquote>
+<h2 id="eventlet的底层greenlet"><a href="#eventlet的底层greenlet" class="headerlink" title="eventlet的底层greenlet"></a>eventlet的底层greenlet</h2><p>说起eventlet总也离不开其底层依赖的greenlet这个Python的协程库。这里不讨论greenlet的实现，只强调greenlet的几个特性。</p>
+<p>协程的意思就是相互协助的程序。它与线程的区别是，协程之间的运行顺序是由程序本身确定的，而不是由内核决定；协程拥有自己独立的栈，可以随时终止和继续运行。</p>
+<p>下面先提供一个实际的例子，然后分析greenlet的几个接口，再回过头说明这个例子的输出。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> time</div><div class="line"><span class="keyword">import</span> greenlet</div><div class="line"></div><div class="line">all_g = &#123;&#125;</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">format_print</span><span class="params">(*args)</span>:</span>    <span class="comment"># 打印当前协程、父协程、输出</span></div><div class="line">	<span class="keyword">global</span> all_g</div><div class="line">	current = greenlet.getcurrent()</div><div class="line">	<span class="keyword">print</span> <span class="string">'greenlet(%s), parent(%s): %s'</span> % (</div><div class="line">              all_g[id(current)], </div><div class="line">              all_g[id(current.parent)],</div><div class="line">              <span class="string">' '</span>.join(map(str, args)))</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run1</span><span class="params">(start)</span>:</span></div><div class="line">	format_print(<span class="string">'g1 begin, start'</span>, start)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):  <span class="comment"># 注意这里是循环2次</span></div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line">		start += <span class="number">1</span></div><div class="line">		start = g2.switch(start)</div><div class="line">		format_print(<span class="string">'start'</span>, start)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g1 end, start'</span>, start)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run2</span><span class="params">(start)</span>:</span></div><div class="line">	format_print(<span class="string">'g2 begin, start'</span>, start)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>):  <span class="comment"># 注意这里循环3次</span></div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line">		start += <span class="number">1</span></div><div class="line">		start = g1.switch(start)</div><div class="line">		format_print(<span class="string">'start'</span>, start)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g2 end, start'</span>, start)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run3</span><span class="params">(num)</span>:</span></div><div class="line">	format_print(<span class="string">'g3 begin, num'</span>, num)</div><div class="line"></div><div class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> range(num):</div><div class="line">		format_print(<span class="string">'i'</span>, i)</div><div class="line">		time.sleep(<span class="number">1</span>)</div><div class="line"></div><div class="line">	end = g2.switch(num+<span class="number">100</span>)</div><div class="line"></div><div class="line">	format_print(<span class="string">'g3 end'</span>, end)</div><div class="line"></div><div class="line">g1 = greenlet.greenlet(run=run1, parent=greenlet.getcurrent())</div><div class="line">g2 = greenlet.greenlet(run=run2, parent=greenlet.getcurrent())</div><div class="line">g3 = greenlet.greenlet(run=run3, parent=g2)</div><div class="line"></div><div class="line">all_g[id(<span class="keyword">None</span>)] = <span class="string">'main'</span></div><div class="line">all_g[id(greenlet.getcurrent())] = <span class="string">'main'</span></div><div class="line">all_g[id(g1)] = <span class="string">'g1'</span></div><div class="line">all_g[id(g2)] = <span class="string">'g2'</span></div><div class="line">all_g[id(g3)] = <span class="string">'g3'</span></div><div class="line">g1.switch(<span class="number">0</span>)</div><div class="line">format_print(<span class="string">'back main after g1.switch'</span>)</div><div class="line"></div><div class="line">g3.switch(<span class="number">3</span>)</div><div class="line">format_print(<span class="string">'back main after g3.switch'</span>)</div><div class="line"></div><div class="line">format_print(g1.switch(<span class="string">'back g1 from main'</span>))</div><div class="line">format_print(g3.switch(<span class="string">'back g3 from main'</span>))</div></pre></td></tr></table></figure>
+<h3 id="greenlet-greenlet"><a href="#greenlet-greenlet" class="headerlink" title="greenlet.greenlet"></a>greenlet.greenlet</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">greenlet.greenlet(run=<span class="keyword">None</span>, parent=<span class="keyword">None</span>) =&gt; greenlet object</div><div class="line"></div><div class="line">run: 传入需要运行的函数，与`Thread`中的`target`相同</div><div class="line">parent: 转入协程的父协程，默认为当前协程</div></pre></td></tr></table></figure>
+<h3 id="父协程有什么用？"><a href="#父协程有什么用？" class="headerlink" title="父协程有什么用？"></a>父协程有什么用？</h3><p>父协程可以通过调用<code>greenlet.getcurrent().parent</code>得到，那么这里传入父协程有什么用处？</p>
+<p>简单的来说，父协程最大的用处在于，当前协程运行退出后，自动切换到父协程运行。换句话说，如果<code>parent=None</code>那么创建的协程退出后将自动切回到创建该协程的调用者中运行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(*args, **kwargs)</span>:</span></div><div class="line">    <span class="keyword">print</span> args, kwargs</div><div class="line">    <span class="keyword">print</span> <span class="string">'run over'</span></div><div class="line"></div><div class="line">parent = greenlet.greenlet(run=run)</div><div class="line">child = greenlet.greenlet(run=run, parent=parent)</div><div class="line">child.switch()</div><div class="line">&gt;&gt;</div><div class="line">(), &#123;&#125;</div><div class="line">run over</div><div class="line">(<span class="keyword">None</span>,), &#123;&#125;</div><div class="line">run over</div></pre></td></tr></table></figure>
+<p>我们可以看到<code>child</code>的参数和运行结束。然后自动切换到了父协程中运行。需要注意的是，当子线程运行结束自动切换到父协程时，会自动专递一个<code>None</code>参数。</p>
+<h3 id="为什么子协程退出切换到父协程时专递一个None参数"><a href="#为什么子协程退出切换到父协程时专递一个None参数" class="headerlink" title="为什么子协程退出切换到父协程时专递一个None参数"></a>为什么子协程退出切换到父协程时专递一个None参数</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_child</span><span class="params">(*args)</span>:</span></div><div class="line">    <span class="keyword">print</span> args</div><div class="line">    <span class="keyword">print</span> <span class="string">'child over'</span></div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_parent</span><span class="params">(*args)</span>:</span></div><div class="line">    <span class="keyword">print</span> args</div><div class="line">    rv = child.switch(<span class="string">'hi, child'</span>)</div><div class="line">    <span class="keyword">print</span> <span class="string">'Parent continue with:'</span>, rv</div><div class="line">    </div><div class="line">parent = greenlet.greenlet(run=run_parent)</div><div class="line">child = greenlet.greenlet(run=run_child, parent=parent)</div><div class="line">parent.switch()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line">()</div><div class="line">(<span class="string">'hi, child'</span>,)</div><div class="line">child over</div><div class="line">Parent <span class="keyword">continue</span> <span class="keyword">with</span>: <span class="keyword">None</span></div></pre></td></tr></table></figure>
+<p>我们可以看到，当子协程自然退出后，父协程通过<code>switch</code>获得了<code>None</code>参数。想一想，如果子协程不传递<code>None</code>参数，那么父协程就需要在<code>switch</code>处报错了。</p>
+<h3 id="如果一个协程永远不被调用switch会怎么样"><a href="#如果一个协程永远不被调用switch会怎么样" class="headerlink" title="如果一个协程永远不被调用switch会怎么样"></a>如果一个协程永远不被调用<code>switch</code>会怎么样</h3><p>一个协程如果没有被调用<code>switch</code>，那么他就永远不能运行。这点和线程完全不同，线程由内核调度，如果主线程自然退出，那么其他线程依然运行(非daemon的线程）。但是，在协程里如果主协程退出，或者进程在其他协程中退出，那么整个程序退出，其他协程没有运行的机会了。看一个官方的例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_g1</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="number">1</span>, <span class="number">2</span></div><div class="line">    g2.switch()</div><div class="line">    <span class="keyword">print</span> <span class="number">5</span>, <span class="number">6</span></div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_g2</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="number">3</span>, <span class="number">4</span></div><div class="line">    g1.switch()</div><div class="line">    <span class="keyword">print</span> <span class="number">7</span>, <span class="number">8</span></div><div class="line"></div><div class="line">g1 = greenlet.greenlet(run=run_g1)</div><div class="line">g2 = greenlet.greenlet(run=run_g2)</div><div class="line">g1.switch()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line"><span class="number">1</span>, <span class="number">2</span></div><div class="line"><span class="number">3</span>, <span class="number">4</span></div><div class="line"><span class="number">5</span>, <span class="number">6</span>    <span class="comment"># 结束</span></div></pre></td></tr></table></figure>
+<p>我们看到<code>7, 8</code>没有输出，因为g1的父协程是主协程，当g1运行结束后，自动切换到主协程，而主协程没有做任何动作就退出了。</p>
+<h3 id="greenlet-switch"><a href="#greenlet-switch" class="headerlink" title="greenlet.switch"></a>greenlet.switch</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">greenlet.switch(*args, **kargs)</div><div class="line">args: 不定参数</div><div class="line">kwargs: 位置参数</div></pre></td></tr></table></figure>
+<p><code>greenlet.switch</code>会导致程序切换到被调用的协程中运行。例如前几个例子中的<code>child.switch()</code>会切换到<code>child</code>协程中运行。</p>
+<h3 id="协程如何继续运行？"><a href="#协程如何继续运行？" class="headerlink" title="协程如何继续运行？"></a>协程如何继续运行？</h3><p>当<code>g.switch</code>被调用时，<code>g</code>在何处继续运行有三种情况：</p>
+<blockquote>
+<ul>
+<li>第一种情况，g没有运行，那么g在run入口处运行。传递的参数作为run的参数。</li>
+<li>第二种情况，g已经运行过，那么g在上次运行停止，也就是调用了otehr.switch而被切换出去的地方继续运行。</li>
+<li>第三种情况，g已经运行退出。那么g会直接返回，如果有参数传递，则直接返回参数</li>
+</ul>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="string">'over'</span></div><div class="line"></div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line"><span class="keyword">print</span> g.dead</div><div class="line"><span class="keyword">print</span> g.switch()</div><div class="line"><span class="keyword">print</span> g.dead</div><div class="line"><span class="keyword">print</span> g.switch(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line"><span class="keyword">print</span> g.switch()</div><div class="line">&gt;&gt;&gt;</div><div class="line"><span class="keyword">False</span></div><div class="line">over</div><div class="line"><span class="keyword">True</span></div><div class="line">(<span class="number">1</span>, <span class="number">2</span>)</div><div class="line">()</div></pre></td></tr></table></figure>
+<p>这里需要注意，当调用已经结束的协程时，会直接返回传递的参数或者是<code>()</code>，而不是之前的<code>None</code>。</p>
+<h3 id="greenlet-throw"><a href="#greenlet-throw" class="headerlink" title="greenlet.throw"></a>greenlet.throw</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">greenlet.throw([type, [val, [tb]]])</div><div class="line"></div><div class="line">type: 异常类型，例如TypeError 之类</div><div class="line">val: 传递给type的参数，例如‘type <span class="keyword">is</span> <span class="keyword">not</span> correct’</div><div class="line">tb: 传递给type的参数，异常的栈。</div></pre></td></tr></table></figure>
+<p><code>throw</code>调用类似<code>switch</code>调用，会立即转到调用的线程运行，并立即抛出异常，类似：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">raiser</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">raise</span> typ, val, tb</div><div class="line">g_raiser = greenlet(raiser, parent=g)</div><div class="line">g_raiser.switch()</div></pre></td></tr></table></figure>
+<p>如果<code>throw</code>没有参数，那么协程会抛出<code>greenlet.GreenletExit</code>。这个异常不会向上传递给父协程，相当于正常的退出。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        greenlet.getcurrent().parent.switch()</div><div class="line">    <span class="keyword">except</span> greenlet.GreenletExit:</div><div class="line">        <span class="keyword">print</span> <span class="string">'exit'</span></div><div class="line">        <span class="keyword">raise</span>       <span class="comment"># raise IOError 加入抛出其他异常，对比抛出GreenletExit</span></div><div class="line"></div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line">g.switch()</div><div class="line">ge = g.throw()  <span class="comment">#</span></div><div class="line"><span class="keyword">print</span> type(ge)</div><div class="line">&gt;&gt;&gt;</div><div class="line">exit</div><div class="line">greenlet.GreenletExit</div></pre></td></tr></table></figure>
+<p>需要注意到，子协程内部产生异常，从而打印<code>exit</code>。父协程获取到了子协程抛出的异常作为返回值，而不是继续抛出异常。所以，调用<code>throw()</code>是安全中断协程的方法。</p>
+<h3 id="第一个例子的输出"><a href="#第一个例子的输出" class="headerlink" title="第一个例子的输出"></a>第一个例子的输出</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">greenlet(g1), parent(main): g1 begin, start <span class="number">0</span></div><div class="line">greenlet(g2), parent(main): g2 begin, start <span class="number">1</span></div><div class="line">greenlet(g1), parent(main): start <span class="number">2</span></div><div class="line">greenlet(g2), parent(main): start <span class="number">3</span></div><div class="line">greenlet(g1), parent(main): start <span class="number">4</span></div><div class="line">greenlet(g1), parent(main): g1 end, start <span class="number">4</span>     <span class="comment"># g1运行结束，转到父协程(main）中运行</span></div><div class="line">greenlet(main), parent(main): back main after g1.switch</div><div class="line">greenlet(g3), parent(g2): g3 begin, num <span class="number">3</span>   </div><div class="line">greenlet(g3), parent(g2): i <span class="number">0</span></div><div class="line">greenlet(g3), parent(g2): i <span class="number">1</span></div><div class="line">greenlet(g3), parent(g2): i <span class="number">2</span>   </div><div class="line">greenlet(g2), parent(main): start <span class="number">103</span>   <span class="comment"># g3循环3次转到g2运行</span></div><div class="line">greenlet(main), parent(main): back main after g3.switch</div><div class="line">greenlet(main), parent(main): back g1 <span class="keyword">from</span> main <span class="comment"># g1运行已经结束，因此g1.switch()直接返回传递的参数</span></div><div class="line">greenlet(g3), parent(g2): g3 end back g3 <span class="keyword">from</span> main</div><div class="line">greenlet(g2), parent(main): start <span class="keyword">None</span>  <span class="comment"># g3运行结束，转回到父协程g2，因此获取的值为None</span></div><div class="line">greenlet(g2), parent(main): g2 end, start <span class="keyword">None</span></div><div class="line">greenlet(main), parent(main): <span class="keyword">None</span>  <span class="comment"># g2运行结束，因此获取的参数是None</span></div></pre></td></tr></table></figure>
+<p>从结果可知道，调用<code>g.switch</code>后返回的参数，是下次切换到本协程(其他协程调用本协程的<code>switch</code>或者<code>throww</code>）传递的参数，而与协程<code>g</code>没有关系。</p>
+<h3 id="协程与线程"><a href="#协程与线程" class="headerlink" title="协程与线程"></a>协程与线程</h3><p>假如在一个协程，切换到另一个线程中的协程会如何？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> threading</div><div class="line"><span class="keyword">import</span> greenlet</div><div class="line"><span class="keyword">import</span> time</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> <span class="string">'run in thread'</span></div><div class="line">    </div><div class="line">g = greenlet.greenlet(run=run)</div><div class="line">th = threaing.Thread(target=g.switch)</div><div class="line">th.start()</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div><div class="line">Traceback ...</div><div class="line">...</div><div class="line">error: cannot switch to a different thread</div></pre></td></tr></table></figure>
+<p>每个协程是依赖于栈空间的，而线程拥有独立的空间，当切换过去必然引起错误。<code>greenlet</code>也不允许这种切换</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2015/04/13/python-flyweight/" itemprop="url">
                   python中的享元模式(flyweight)
                 </a>
@@ -2608,129 +2780,6 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2014/09/24/python_absolute_import/" itemprop="url">
-                  Python绝对导入
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-09-24T00:00:00-07:00" content="2014-09-24">
-              2014-09-24
-            </time>
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2014/09/24/python_absolute_import/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/09/24/python_absolute_import/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h3 id="absolute-import-绝对导入"><a href="#absolute-import-绝对导入" class="headerlink" title="absolute_import 绝对导入"></a>absolute_import 绝对导入</h3><hr>
-<p>绝对导入，指从顶层用<code>import</code>直接导入模块，即(只)从<code>sys.path</code>中导入模块。 例如：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> sys</div><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">import</span> sys.path</div><div class="line"><span class="keyword">import</span> sys.path.join <span class="keyword">as</span> path_join</div></pre></td></tr></table></figure>
-<p><div></div></p>
-<h3 id="import关键词的歧义"><a href="#import关键词的歧义" class="headerlink" title="import关键词的歧义?"></a><code>import</code>关键词的歧义?</h3><hr>
-<p>之所以引入<code>绝对导入</code>，是因为python中的<code>import</code>关键词存在歧义。当<code>import foo</code>被定义时，用户根本无法得知<code>foo</code>这个模块是内置模块，第三方安装模块，还是用户当前包下的自定义模块。目前python2.7.x默认情况下是优先导入当前目录下的自定义模块，那么在有冲突的情况下，内置（第三方）模块<code>foo</code>怎么导入？</p>
-<p>如果相反，默认情况下导入的是内置或者第三方安装模块，那么本地的<code>foo</code>模块可以通过<code>间接导入</code>以<code>from . import foo</code>方式导入，从而解决这个问题。</p>
-<p>因此，<code>绝对导入</code>的概念被引入。python2.7.x可以通过<code>from __future__ import absolute_import</code>改变<code>import</code>行为，强制<code>import foo</code>导入的是<code>sys.path</code>下的模块，并且本地模块(非<code>sys.path</code>下的模块)必须通过<code>相对导入</code>的方式进行导入。</p>
-<h3 id="举例说明"><a href="#举例说明" class="headerlink" title="举例说明"></a>举例说明</h3><hr>
-<p>目录结构如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">package/</div><div class="line">    __init__.py</div><div class="line">    subpackage1/</div><div class="line">        __init__.py</div><div class="line">        moduleX.py</div><div class="line">        moduleY.py</div><div class="line">    subpackage2/</div><div class="line">        __init__.py</div><div class="line">        moduleZ.py</div><div class="line">    moduleA.py</div></pre></td></tr></table></figure>
-<p>当前的文件<code>package.subpackage1.moduleX.py</code></p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">from __future__ import absolute_import # __future__必须在代码的第一行</div><div class="line"></div><div class="line">#绝对导入</div><div class="line">import os</div><div class="line">import sys</div><div class="line"></div><div class="line">#相对导入</div><div class="line">from . import moduleY</div><div class="line">from .moduleY import xxx</div><div class="line">from ..subpackage2 import moduleZ</div><div class="line"></div><div class="line">#错误的导入, 绝对导入只能导入sys.path中的模块</div><div class="line">#moduleY只能以相对导入的方式进行导入</div><div class="line">#import moduleY  </div><div class="line"></div><div class="line"></div><div class="line">def main():</div><div class="line">	print 'ok'</div><div class="line"></div><div class="line"></div><div class="line">if __name__ == '__main__:</div><div class="line">	main()</div></pre></td></tr></table></figure>
-<p><div></div></p>
-<h3 id="ValueError-Attempted-relative-import-in-non-package"><a href="#ValueError-Attempted-relative-import-in-non-package" class="headerlink" title="ValueError: Attempted relative import in non-package"></a>ValueError: Attempted relative import in non-package</h3><hr>
-<p>在上面的例子中，当试图直接运行<code>python moduleX.py</code>时会报如上错误。<br>当直接运行<code>moduleX.py</code>时，此文件被视为一个顶层的脚本而不是包。 而在一个顶层脚本里是不能进行相对引用的。</p>
-<p>可以在package层添加<code>test.py</code>脚本进行测试，内容如下。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> package.subpackage1 <span class="keyword">import</span> moduleY</div><div class="line"></div><div class="line">moduleY.main()</div></pre></td></tr></table></figure>
-<p>此时，package整体作为一个包，包内就可以进行<code>相对导入</code>了。 最终目录结构如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">project/</div><div class="line">	test.py</div><div class="line">    package/</div><div class="line">        __init__.py</div><div class="line">        subpackage1/</div><div class="line">            __init__.py</div><div class="line">            moduleX.py</div><div class="line">            moduleY.py</div><div class="line">        subpackage2/</div><div class="line">            __init__.py</div><div class="line">            moduleZ.py</div><div class="line">        moduleA.py</div></pre></td></tr></table></figure>
-<p><div></div></p>
-<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><hr>
-<p><a href="http://legacy.python.org/dev/peps/pep-0328/#rationale-for-absolute-imports" target="_blank" rel="external">PEP328</a></p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2776,7 +2825,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">36</span>
+              <span class="site-state-item-count">37</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2784,7 +2833,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
           
             <div class="site-state-item site-state-categories">
               <a href="/blog/categories">
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -2837,7 +2886,7 @@ Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、�
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
