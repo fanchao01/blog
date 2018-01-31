@@ -5,7 +5,7 @@
   <link href="/blog/atom.xml" rel="self"/>
   
   <link href="http://fanchao01.github.io/blog/"/>
-  <updated>2017-09-29T09:44:01.784Z</updated>
+  <updated>2018-01-31T04:07:07.117Z</updated>
   <id>http://fanchao01.github.io/blog/</id>
   
   <author>
@@ -16,9 +16,137 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>一些容错方面的思考</title>
+    <link href="http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/"/>
+    <id>http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/</id>
+    <published>2018-01-15T08:00:00.000Z</published>
+    <updated>2018-01-31T04:07:07.117Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h1><p>A fault-tolerant design enables a system to continue its intended operation, possibly at a reduced level, rather than failing completely, when some part of the system fails. If its operating quality decreases at all, the decrease is proportional to the severity of the failure, as compared to a naively designed system in which even a small failure can cause total breakdown.</p>
+<p>维基百科上的容错有几方面意思：</p>
+<ol>
+<li>容错指系统遭遇故障时不是完全崩溃，而是能够降级提供服务；</li>
+<li>容错系统的服务能力能够根据不同程度的故障保证不同程度的服务，优雅降级。</li>
+</ol>
+<h1 id="容错与高可用性"><a href="#容错与高可用性" class="headerlink" title="容错与高可用性"></a>容错与高可用性</h1><p>容错特指故障发生时的表现；而高可用性是指尽量规避影响用户的可能。可以将一个系统类比成汽车，容错是车祸时自动弹出的气囊，而高可用是刹车系统。我的理解是，容错是高可用性的一个子集，特指(预防)出现问题后的解决方案。</p>
+<p>要想打造一个具有高度容错的系统，需要从架构设计、代码、运维、监控等多方面入手，以下介绍一些可以作为容错系统的思考切入点</p>
+<h2 id="重试"><a href="#重试" class="headerlink" title="重试"></a>重试</h2><hr>
+<p>重试是错误处理中最常使用的技术，通过重试能够大幅度提高SLA，提高系统的可用性。按照系统的状态，重试的难易程度不同。对于无状态服务，例如大多数HTTP请求，简单重新发起调用即可；但是对于有状态服务，不仅需要被请求方具有幂等性，而是要求整个系统具有幂等性。因为极有可能上次失败的调用，使整个下游的状态都发生了改变。因此，对于不同错误应采用不同的重试策略，一些错误不能重试。<br>另外，重试有副作用，可能引起大量的重复操作和吞吐。例如，一个页面展示显示不出来，用户会大量频繁点击，反而造成系统瞬时压力过大，给本来处于不正常的系统带来更加重的问题。按照具体策略不同，重试可能需要限制次数，或者根据成功率决定是否重试等。<br>重试的另外一个副作用是增大了延时，重试时间一般采用退化算法，失败次数越多，下次重试的等待时间越长，那么最大延时取决于最后一次重试成功时的总重试时间，这个时间一定要(远)小于整个系统的延时要求。</p>
+<h2 id="超时"><a href="#超时" class="headerlink" title="超时"></a>超时</h2><hr>
+<p>对各种请求，特别是跨模块/服务的请求一定要添加超时，无论是同步还是异步请求。超时除了能够保证延时，更大的作用在于能够快速发现问题，从而积极采取应对策略。假设一个系统出现内部问题，请求被开在某个状态无法返回，那么这个问题就很难处理，一方面监控发现需要一定时间，另一方面即使发现也很难处理，因为卡的状态可能是复杂且未知的。</p>
+<h2 id="HA"><a href="#HA" class="headerlink" title="HA"></a>HA</h2><hr>
+<p>这里的HA特指一些集群的方案和算法，保证单个服务或者单台机器出现问题而整个系统正常提供服务。简单来说就是避免单点问题。这个比较有名的总结即为下图。</p>
+<p><img src="/blog/images/ha.png" alt="img"></p>
+<p>通过改图可以总结出，就是简单的方案性能高，但是可用性较低；而复杂的方案，影响吞吐和延时。</p>
+<p>从系统内部和外部可以将集群HA方案分为两个维度：</p>
+<ol>
+<li>集群本身支持HA，通过各种一致性算法保证强一致或者最终一致</li>
+<li>集群外部，例如通过使用prox、LB等各种代理，但这要求服务最好无状态</li>
+</ol>
+<h2 id="服务分离"><a href="#服务分离" class="headerlink" title="服务分离"></a>服务分离</h2><hr>
+<p>将重要服务/客户分离是减小问题的影响范围的最简易手段。现在比较流行微服务架构，不同的服务通过松耦合的方式连接，不同服务往往部署在不同的docker、虚拟机或者物理机上。根据服务的重要性不同，可以分离的程度不同。一些及其重要的服务，甚至单独部署在隔离的物理机上。</p>
+<h2 id="服务冗余"><a href="#服务冗余" class="headerlink" title="服务冗余"></a>服务冗余</h2><hr>
+<p>这里的服务冗余与HA不同，更加偏向于上图中的Backups。平时不提供服务，专门存在一个备份系统在主系统出现问题时进行快速切换。这里有两个问题，一个是数据的一致性问题，可以时时同步或者冷备份，但是一般都有一定时间内的数据丢失问题。而且在实际使用过程中，备份的系统往往有时候并不处在可用状态。主系统可能定时升级，而备份系统没有；同步到备份系统的数据可能某次有丢失不全等等。亚马逊也出现过类似问题，出现故障时恢复耗时过长，而主要原因就是备份系统起不来数据也不全。备份冗余的另外一个问题是快速切换，如果切换太慢那么可能还不如修复主系统。鉴于实际的种种问题，一般出现故障不太会倾向于切换到备系统，坑比较深。</p>
+<h2 id="服务降级"><a href="#服务降级" class="headerlink" title="服务降级"></a>服务降级</h2><hr>
+<p>当出现故障后，能够按照故障的严重程度不同，提供不同质量的服务。服务降级是容灾的核心，但是往往很难做到，这不仅需要好的架构设计，也需要好的编程实现。比较容易理解的例子是页面渲染，例如在页面不能加载一些宣传语广告时直接跳过，保证主要功能可用。另外通过将系统做到跨机器、跨机柜、跨TOR、跨机房、跨地域的容灾设计，可以保证不同程度的服务可用性。</p>
+<h2 id="donwtime"><a href="#donwtime" class="headerlink" title="donwtime"></a>donwtime</h2><hr>
+<p>对于各种可能出现的宕机，Oracle有一个概述，可以针对提到的这些点对当前系统进行重点排查。</p>
+<h2 id="非计划宕机"><a href="#非计划宕机" class="headerlink" title="非计划宕机"></a>非计划宕机</h2><p><img src="/blog/images/unplanned_downtime.png" alt="img"></p>
+<h2 id="有计划宕机"><a href="#有计划宕机" class="headerlink" title="有计划宕机"></a>有计划宕机</h2><p><img src="/blog/images/planned_downtime.png" alt="img"></p>
+<p>处理针对这些点进行设计，更重要的是要有定期排查。现实是往往有一些容错、容灾、备份方案，但是一段时间没有用上后，这些手段就再也不演练。真的出现问题，这些手段已经跟当前系统不配置，失效了。</p>
+<p>（完）</p>
+]]></content>
+    
+    <summary type="html">
+    
+      一些在容错方面的想法、思考点和方向。容错，高可用，容灾，fault-tolerant
+    
+    </summary>
+    
+      <category term="系统与架构" scheme="http://fanchao01.github.io/blog/categories/%E7%B3%BB%E7%BB%9F%E4%B8%8E%E6%9E%B6%E6%9E%84/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>OpenStack-Pike版本中的CellV2</title>
+    <link href="http://fanchao01.github.io/blog/2017/09/28/cellv2-in-pike/"/>
+    <id>http://fanchao01.github.io/blog/2017/09/28/cellv2-in-pike/</id>
+    <published>2017-09-28T07:00:00.000Z</published>
+    <updated>2017-10-09T07:27:25.962Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="社区认为大规模部署nova的问题点"><a href="#社区认为大规模部署nova的问题点" class="headerlink" title="社区认为大规模部署nova的问题点"></a>社区认为大规模部署nova的问题点</h1><hr>
+<p>OpenStack社区认为大规模部署nova的主要问题在于rabbitmq消息系统和DB数据库的性能瓶颈。因此CellV1和CellV2的主要工作均是拆分消息系统和数据库，使每个Cell拥有单独的rabbitmq和DB系统，然后通过API维护一层映射信息，记录Cell与实例、宿主机的对应关系。</p>
+<p>CellV1是多层嵌套概念并且已经被社区抛弃，因此这里主要介绍社区新的扩展方案CellV2.</p>
+<h1 id="cellv2的架构"><a href="#cellv2的架构" class="headerlink" title="cellv2的架构"></a>cellv2的架构</h1><hr>
+<p><img src="/blog/images/cellv2-1.jpg" alt="img"></p>
+<ol>
+<li>API层只包含nova-api和nova-scheduler，用于统一处理和调度全局资源。</li>
+<li>API层包含nova_api和nova_cell0两个数据库。其中nova_api库包含所有的全局性资源，例如flavor、quota等；nova_cell0用于存储创建失败后没有被分配到具体host(也就没有从属的Cell）的实例。</li>
+<li>Cell之间是平等的。每个Cell管理自己的各种资源，相互没有从属关系。API与Cell形成扁平结构，理论上Cell可以扩展到多层支持海量宿主机。</li>
+</ol>
+<h1 id="nova-api和nova-cell0数据库结构"><a href="#nova-api和nova-cell0数据库结构" class="headerlink" title="nova_api和nova_cell0数据库结构"></a>nova_api和nova_cell0数据库结构</h1><hr>
+<p>nova_api的数据库结构如下，只包含全局性的配置、Cell映射以及Instance实例对Cell的对应关系。</p>
+<p><img src="/blog/images/cellv2-2.jpg" alt="img"></p>
+<p>instance_mapping、host_mapping分别存储instance_uuid、host和cell_mapping的对应关系，而cell_mapping存储每个cell的数据库和消息系统连接地址。</p>
+<p><img src="/blog/images/cellv2-3.jpg" alt="img"></p>
+<image href="/blog/images/cellv2-3.jpg">
+
+<p>nova_cell0与之前的nova数据库以及各Cell中的数据库相同。主要存储不属于各个Cell的实例信息，可以理解为一个<code>野实例</code>垃圾站。</p>
+<h1 id="典型操作的路径"><a href="#典型操作的路径" class="headerlink" title="典型操作的路径"></a>典型操作的路径</h1><hr>
+<h2 id="获取instance信息"><a href="#获取instance信息" class="headerlink" title="获取instance信息"></a>获取instance信息</h2><hr>
+<p><img src="/blog/images/cellv2-4.jpg" alt="img"></p>
+<ol>
+<li>nova-api先从instance_mappings表拿到instance的cell_id</li>
+<li>再从cell_mappings表拿到所在Clll的DB connection</li>
+<li>直接连接Cell的DB拿到Instance实例的详细信息</li>
+</ol>
+<h2 id="重启instance操作"><a href="#重启instance操作" class="headerlink" title="重启instance操作"></a>重启instance操作</h2><hr>
+<p><img src="/blog/images/cellv2-5.jpg" alt="img"></p>
+<ol>
+<li>nova-api先从instance_mappings表里拿到instance所在的cell_id</li>
+<li>从cell_mappings里拿到所在Cell的<code>message queue</code>连接</li>
+<li>nova-api直接给mq的相关队列发重启实例的消息</li>
+</ol>
+<h2 id="新建instance操作"><a href="#新建instance操作" class="headerlink" title="新建instance操作"></a>新建instance操作</h2><hr>
+<p><img src="/blog/images/cellv2-6.jpg" alt="img"></p>
+<ol>
+<li>nova-api接到用户的请求信息，先转发到nova-scheduler进行调度，nova-scheduler通过placement service, 直接确定分配到哪台机器上</li>
+<li>nova-api把实例的信息存入instance_mappings表</li>
+<li>nova-api把机器信息存到目标Cell的DB中</li>
+<li>nova-api给Cell的<code>message queue</code>发送消息启动实例</li>
+</ol>
+<h1 id="CellV2的缺点"><a href="#CellV2的缺点" class="headerlink" title="CellV2的缺点"></a>CellV2的缺点</h1><hr>
+<ul>
+<li>每个instance访问需要经过两层数据库，因此需要对cell_mapping、host_mapping和instance_mapping进行合理的缓存，减少数据库的频繁访问。</li>
+<li>当一个用户的多个实例分布在多个Cell中，获取所有的实例信息比较复杂，需要合理的前端展示策略，例如按照cell的顺序去分页展示。</li>
+<li>旧版本的消息推送不再适合cellv2架构，因为没有统一的rabbitmq入口了。</li>
+</ul>
+<h1 id="CellV2的优点"><a href="#CellV2的优点" class="headerlink" title="CellV2的优点"></a>CellV2的优点</h1><hr>
+<ul>
+<li>架构清晰简单，只有两层的扁平架构支持多CellV2部署，理论上性能上限只受限于nova_api层数据库。</li>
+<li>过渡比较顺滑，特别是从不使用Cell升级到使用CellV2比过渡到CellV1简单。</li>
+</ul>
+<h1 id="社区的后续发展思路"><a href="#社区的后续发展思路" class="headerlink" title="社区的后续发展思路"></a>社区的后续发展思路</h1><hr>
+<p>拆分nova-scheduler，使每层Cell拥有独立的scheduler模块从而对每个Cell定制化调度策略</p>
+<p>（完）</p>
+</image>]]></content>
+    
+    <summary type="html">
+    
+      nova项目Pike版本中的CellV2,以及nova大规模部署的方向
+    
+    </summary>
+    
+      <category term="OpenStack" scheme="http://fanchao01.github.io/blog/categories/OpenStack/"/>
+    
+    
+  </entry>
+  
+  <entry>
     <title>OpenStack-Pike版本中的资源管理与并发调度</title>
-    <link href="http://fanchao01.github.io/blog/2017/09/27/palcement-in-pike/"/>
-    <id>http://fanchao01.github.io/blog/2017/09/27/palcement-in-pike/</id>
+    <link href="http://fanchao01.github.io/blog/2017/09/27/placement-in-pike/"/>
+    <id>http://fanchao01.github.io/blog/2017/09/27/placement-in-pike/</id>
     <published>2017-09-27T07:00:00.000Z</published>
     <updated>2017-09-29T09:44:01.784Z</updated>
     
@@ -1119,97 +1247,6 @@
     </summary>
     
       <category term="linux" scheme="http://fanchao01.github.io/blog/categories/linux/"/>
-    
-    
-  </entry>
-  
-  <entry>
-    <title>tornado中一些通用的函数和类</title>
-    <link href="http://fanchao01.github.io/blog/2015/01/19/python-tornado-utils/"/>
-    <id>http://fanchao01.github.io/blog/2015/01/19/python-tornado-utils/</id>
-    <published>2015-01-19T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.706Z</updated>
-    
-    <content type="html"><![CDATA[<h3 id=""><a href="#" class="headerlink" title=" "></a> </h3><hr>
-<p>本篇记录tornado源代码阅读过程中一些有意思的函数和类等，偏向于python编程技巧语法等。</p>
-<h3 id="ObjectDict"><a href="#ObjectDict" class="headerlink" title="ObjectDict"></a>ObjectDict</h3><hr>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ObjectDict</span><span class="params">(dict)</span>:</span></div><div class="line">    <span class="string">"""Makes a dictionary behave like an object, with attribute-style access.</span></div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">return</span> self[name]</div><div class="line">        <span class="keyword">except</span> KeyError:</div><div class="line">            <span class="keyword">raise</span> AttributeError(name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setattr__</span><span class="params">(self, name, value)</span>:</span></div><div class="line">        self[name] = value</div><div class="line"></div><div class="line">od = ObjectDict()</div><div class="line">od.a = <span class="number">1</span></div><div class="line">od[<span class="string">'a'</span>]		<span class="comment"># 1</span></div><div class="line">od.a		<span class="comment"># 1</span></div></pre></td></tr></table></figure>
-<h3 id="import-object"><a href="#import-object" class="headerlink" title="import_object"></a>import_object</h3><hr>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">import_object</span><span class="params">(name)</span>:</span></div><div class="line">    <span class="string">"""Imports an object by name.</span></div><div class="line"></div><div class="line">    import_object('x') is equivalent to 'import x'.</div><div class="line">    import_object('x.y.z') is equivalent to 'from x.y import z'.</div><div class="line"></div><div class="line">    &gt;&gt;&gt; import tornado.escape</div><div class="line">    &gt;&gt;&gt; import_object('tornado.escape') is tornado.escape</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado.escape.utf8') is tornado.escape.utf8</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado') is tornado</div><div class="line">    True</div><div class="line">    &gt;&gt;&gt; import_object('tornado.missing_module')</div><div class="line">    Traceback (most recent call last):</div><div class="line">        ...</div><div class="line">    ImportError: No module named missing_module</div><div class="line">    """</div><div class="line">    <span class="keyword">if</span> name.count(<span class="string">'.'</span>) == <span class="number">0</span>:</div><div class="line">        <span class="keyword">return</span> __import__(name, <span class="keyword">None</span>, <span class="keyword">None</span>)</div><div class="line"></div><div class="line">    parts = name.split(<span class="string">'.'</span>)</div><div class="line">    obj = __import__(<span class="string">'.'</span>.join(parts[:<span class="number">-1</span>]), <span class="keyword">None</span>, <span class="keyword">None</span>, [parts[<span class="number">-1</span>]], <span class="number">0</span>)</div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">return</span> getattr(obj, parts[<span class="number">-1</span>])</div><div class="line">    <span class="keyword">except</span> AttributeError:</div><div class="line">        <span class="keyword">raise</span> ImportError(<span class="string">"No module named %s"</span> % parts[<span class="number">-1</span>])</div></pre></td></tr></table></figure>
-<p>比<code>importlib.import_module</code>更加方便，<code>import_object</code>可以直接导入模块或者属性，而前者只能导入模块。另外注意两个函数都是将导入的对象返回，而不是将其暴露在当前域名中， 和<code>import</code>有差距。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">import_object(<span class="string">'os'</span>)</div><div class="line">os	<span class="comment">#NameError</span></div><div class="line"></div><div class="line">path_exists = import_object(<span class="string">'os.path.exists'</span>)</div><div class="line"><span class="comment"># from  os.path import exists as path_exists</span></div><div class="line"></div><div class="line"><span class="comment">####################</span></div><div class="line">mypath = importlib.import_module(<span class="string">'.path'</span>, <span class="string">'os'</span>)</div><div class="line"><span class="comment"># from os import path as mypath</span></div></pre></td></tr></table></figure>
-<p>### </p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;h3 id=&quot;&quot;&gt;&lt;a href=&quot;#&quot; class=&quot;headerlink&quot; title=&quot; &quot;&gt;&lt;/a&gt; &lt;/h3&gt;&lt;hr&gt;
-&lt;p&gt;本篇记录tornado源代码阅读过程中一些有意思的函数和类等，偏向于python编程技巧语法等。&lt;/p&gt;
-&lt;h3 id=&quot;ObjectDict
-    
-    </summary>
-    
-      <category term="python" scheme="http://fanchao01.github.io/blog/categories/python/"/>
-    
-      <category term="tornado" scheme="http://fanchao01.github.io/blog/categories/python/tornado/"/>
-    
-    
-  </entry>
-  
-  <entry>
-    <title>tornado源码分析-1</title>
-    <link href="http://fanchao01.github.io/blog/2015/01/18/python-tornado/"/>
-    <id>http://fanchao01.github.io/blog/2015/01/18/python-tornado/</id>
-    <published>2015-01-18T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.703Z</updated>
-    
-    <content type="html"><![CDATA[<p><img src="/blog/images/asyncingio.gif" alt="image"></p>
-<h3 id="一个简单的tornado应用实例"><a href="#一个简单的tornado应用实例" class="headerlink" title="一个简单的tornado应用实例"></a>一个简单的tornado应用实例</h3><hr>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> tornado.ioloop</div><div class="line"><span class="keyword">import</span> tornado.web</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainHandler</span><span class="params">(tornado.web.RequestHandler)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self)</span>:</span></div><div class="line">        self.write(<span class="string">"Hello, world"</span>)</div><div class="line"></div><div class="line">application = tornado.web.Application([</div><div class="line">    (<span class="string">r"/"</span>, MainHandler),</div><div class="line">])</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</div><div class="line">    application.listen(<span class="number">8888</span>)</div><div class="line">    tornado.ioloop.IOLoop.instance().start()</div></pre></td></tr></table></figure>
-<p>tornado框架以<code>Application</code>为入口，以<code>RequestHandler</code>为接口，以<code>IOLoop</code>为核心进行构建。上面的例子创建了一个简单的<code>Hello，World</code>程序。tornado以异步高性能为目的，采用异步非堵塞网络IO模型，低层利用<code>epoll</code>（linux平台），特别适合高性能长连接的应用场景。</p>
-<h3 id="异步非堵塞编程模型"><a href="#异步非堵塞编程模型" class="headerlink" title="异步非堵塞编程模型"></a><a href="http://www.tornadoweb.org/en/stable/guide/async.html" target="_blank" rel="external">异步非堵塞编程模型</a></h3><hr>
-<p>异步函数]，会在结束所有操作前就返回，其中的一些操作（特别是耗时间的IO操作）会交给后台去运行，这些操作完成后再触发应用中的其它函数逻辑。一般有4种类型的异步接口：</p>
-<ul>
-<li>回调参数。<br>通过参数传入callback等待完成后再进行最后的callback操作。<br><code>asynchronous_fetch-&gt;http_client.fetch-&gt;handle_respones-&gt;callback</code>，</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.httpclient <span class="keyword">import</span> AsyncHTTPClient</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">asynchronous_fetch</span><span class="params">(url, callback)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle_response</span><span class="params">(response)</span>:</span></div><div class="line">        callback(response.body)</div><div class="line">    http_client.fetch(url, callback=handle_response)</div></pre></td></tr></table></figure>
-<ul>
-<li>返回一个占位实例。<br>通过两个Future实例完成一步步的回调，事件通知或者订阅者-发布者模型。</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado.concurrent <span class="keyword">import</span> Future</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">async_fetch_future</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()</div><div class="line">    my_future = Future()</div><div class="line">    fetch_future = http_client.fetch(url)</div><div class="line">    fetch_future.add_done_callback(</div><div class="line">        <span class="keyword">lambda</span> f: my_future.set_result(f.result()))</div><div class="line">    <span class="keyword">return</span> my_future</div></pre></td></tr></table></figure>
-<ul>
-<li><p>提交给队列。<br><code>nose.js</code>是这种模型，每个操作是一个事件提交给后台的其他线程库，完成后再交给主线程中的队列进行回调操作。</p>
-</li>
-<li><p>回调注册。<br><code>POSIX</code>信号是这种模型，通过注册回调函数。（这里我还不太清楚与回调参数有什么不同）</p>
-</li>
-</ul>
-<p>无论是哪种形式，异步模型都有一些通用逻辑，可以分为<code>堵塞前操作</code>，<code>堵塞操作</code>，<code>通知</code>，<code>堵塞后操作</code>。</p>
-<ul>
-<li><code>堵塞前操作</code>，立即完成的，发生在堵塞操作前的逻辑。</li>
-<li><code>堵塞操作</code>，堵塞操作，主要需要解决的部分。</li>
-<li><code>通知</code>，堵塞操作完成后，如何通知已经完成了堵塞操作</li>
-<li><code>堵塞后操作</code>，堵塞操作完成后的逻辑，一般处理堵塞操作的返回值。</li>
-</ul>
-<p>同步堵塞模型比较简单，所有逻辑操作都捆绑在一起，没有也不必进行<code>通知</code>。异步非堵塞模型需要重点处理<code>堵塞操作</code>和<code>通知</code>。一般的异步非堵塞使用callback模型，将<code>堵塞前操作</code>和<code>堵塞后逻辑</code>显式分开，通过向<code>堵塞操作</code>传递<code>堵塞后操作</code>进行<code>通知</code>机制（callback）。</p>
-<h3 id="tornado中的异步非堵塞模型"><a href="#tornado中的异步非堵塞模型" class="headerlink" title="tornado中的异步非堵塞模型"></a>tornado中的异步非堵塞模型</h3><hr>
-<p>tornado的异步接口利用Python的协程语法<code>yield</code>可以暂停操作，将<code>堵塞逻辑</code>、<code>通知</code>和<code>堵塞后操作</code>捆绑到一起，不用显式的拆分最大限度的保持和同步接口的一致性。通过<code>yield</code>让出<code>堵塞操作</code>交给<code>IOLoop</code>统一处理，再通过<code>Future</code>机制进行<code>通知</code>机制。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> tornado <span class="keyword">import</span> gen</div><div class="line"></div><div class="line"><span class="meta">@gen.coroutine</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">fetch_coroutine</span><span class="params">(url)</span>:</span></div><div class="line">    http_client = AsyncHTTPClient()		<span class="comment"># 堵塞前操作</span></div><div class="line">    response = <span class="keyword">yield</span> http_client.fetch(url)	<span class="comment"># 堵塞操作</span></div><div class="line">    <span class="keyword">return</span> response.body	<span class="comment"># 堵塞后操作</span></div></pre></td></tr></table></figure>
-<p>tornado的异步堵塞模型低层采用<code>epoll</code>模型，通过（隐式）<code>Future</code>机制进行回调通知，通过<code>IOLoop</code>处理堵塞操作。简单的<code>IOLoop</code>逻辑示例：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Simplified inner loop of tornado.gen.Runner</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="comment"># send(x) makes the current yield return x.</span></div><div class="line">    <span class="comment"># It returns when the next yield is reached</span></div><div class="line">    future = self.gen.send(self.next) </div><div class="line">	<span class="comment"># 通过send 通知 协程进行 堵塞后操作</span></div><div class="line">	<span class="comment"># future衔接 堵塞前和堵塞后的逻辑</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">callback</span><span class="params">(f)</span>:</span></div><div class="line">        self.next = f.result()</div><div class="line">        self.run()</div><div class="line"></div><div class="line">    future.add_done_callback(callback)</div><div class="line">	<span class="comment"># 向future中注册辅助函数，进行回调后的通知</span></div></pre></td></tr></table></figure>
-<h3 id="tornado中核心类"><a href="#tornado中核心类" class="headerlink" title="tornado中核心类"></a>tornado中核心类</h3><hr>
-<p>tornado主要有两个核心类，<code>IOLoop</code>封装低层<code>epoll</code>集中处理堵塞操作。<code>iostream</code>封装<code>read、write</code>函数进行缓存和更方便的处理HTTP协议。具体分析稍后进行。</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;&lt;img src=&quot;/blog/images/asyncingio.gif&quot; alt=&quot;image&quot;&gt;&lt;/p&gt;
-&lt;h3 id=&quot;一个简单的tornado应用实例&quot;&gt;&lt;a href=&quot;#一个简单的tornado应用实例&quot; class=&quot;headerlink&quot; title=&quot;一
-    
-    </summary>
-    
-      <category term="python" scheme="http://fanchao01.github.io/blog/categories/python/"/>
-    
-      <category term="tornado" scheme="http://fanchao01.github.io/blog/categories/python/tornado/"/>
     
     
   </entry>

@@ -245,6 +245,291 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2014/11/02/django-LazyObject-惰性求值/" itemprop="url">
+                  django中的惰性求值
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-02T00:00:00-07:00" content="2014-11-02">
+              2014-11-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/11/02/django-LazyObject-惰性求值/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/11/02/django-LazyObject-惰性求值/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><hr>
+<ol>
+<li>软件开发中遇到的所有问题，都可以通过增加一层抽象而得以解决。</li>
+<li>代理模式，为其他对象提供一种代理以控制对这个对象的访问。</li>
+</ol>
+<h3 id="django中的LazyObject"><a href="#django中的LazyObject" class="headerlink" title="django中的LazyObject"></a><code>django</code>中的<code>LazyObject</code></h3><hr>
+<p>django.utils.functional.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line">empty = object()</div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">new_method_proxy</span><span class="params">(func)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">(self, *args)</span>:</span></div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup()</div><div class="line">        <span class="keyword">return</span> func(self._wrapped, *args)</div><div class="line">    <span class="keyword">return</span> inner</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">LazyObject</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    A wrapper for another class that can be used to delay instantiation of the</div><div class="line">    wrapped class.</div><div class="line"></div><div class="line">	# 一个封装类，被封装的对象能够延迟实例化的时间</div><div class="line"></div><div class="line">    By subclassing, you have the opportunity to intercept and alter the</div><div class="line">    instantiation. If you don't need to do that, use SimpleLazyObject.</div><div class="line"></div><div class="line">	# 通过继承此类，可以介入和改变被封装的实例。如果不需要这样做，可以使用SimpleLazyObject</div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">        self._wrapped = empty</div><div class="line"></div><div class="line">    __getattr__ = new_method_proxy(getattr)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setattr__</span><span class="params">(self, name, value)</span>:</span></div><div class="line">        <span class="keyword">if</span> name == <span class="string">"_wrapped"</span>:</div><div class="line">            <span class="comment"># Assign to __dict__ to avoid infinite __setattr__ loops.</span></div><div class="line">			<span class="comment"># self._wrapped = value 的写法会导致无限循环调用 __setattr__</span></div><div class="line">            self.__dict__[<span class="string">"_wrapped"</span>] = value</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">			<span class="comment"># 进行赋值时，再通过 _setup 进行实例化</span></div><div class="line">            <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">                self._setup()</div><div class="line">            setattr(self._wrapped, name, value)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__delattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">		<span class="comment"># 进行取值时， 再通过 _setup 进行实例化</span></div><div class="line">        <span class="keyword">if</span> name == <span class="string">"_wrapped"</span>:</div><div class="line">            <span class="keyword">raise</span> TypeError(<span class="string">"can't delete _wrapped."</span>)</div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup()</div><div class="line">        delattr(self._wrapped, name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Must be implemented by subclasses to initialise the wrapped object.</div><div class="line">        """</div><div class="line">        <span class="keyword">raise</span> NotImplementedError</div><div class="line"></div><div class="line">    <span class="comment"># introspection support:</span></div><div class="line">    __dir__ = new_method_proxy(dir)</div></pre></td></tr></table></figure>
+<p>增加一个<code>LazyObject</code>类封装需要延迟实例化的对象，通过改写<code>__getattr__</code>、<code>__setattr__</code>和<code>__delattr__</code>进行代理和按需实例化。(代理模式ProxyPattern）。</p>
+<h2 id="django中的SimpleLazyObject"><a href="#django中的SimpleLazyObject" class="headerlink" title="django中的SimpleLazyObject"></a>django中的SimpleLazyObject</h2><hr>
+<p>如<code>LazyObject</code>中所说，当只是简单的代理而不需要改变封装的<code>_wrapped</code>时，只需使用<code>SimpleLazyObject</code>。 这个代理类需要一个<code>func</code>参数，当需要实例化时调用。这个func参数可以是被封装的类、延迟求值的函数等，任何需要代理的对象。为了实际使用需要处理一些特殊方法，基本的实现框架如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SimpleLazyObject</span><span class="params">(LazyObject)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, func)</span>:</span></div><div class="line">		self.__dict__[<span class="string">'_setupfunc'</span>] = func</div><div class="line">	</div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></div><div class="line">		self._wrapped = self._setupfunc()</div></pre></td></tr></table></figure>
+<h2 id="真实的代理类"><a href="#真实的代理类" class="headerlink" title="真实的代理类"></a>真实的代理类</h2><hr>
+<ol>
+<li>重写<code>_setup</code>，被封装的类为 <code>self._wrapped = Setting(settings_module)</code></li>
+<li>通过提供<code>configure</code>接口，可以由用户修改内部被封装的配置类·</li>
+</ol>
+<p>django.conf.settings(django.conf.<strong>init</strong>.py)</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">LazySettings</span><span class="params">(LazyObject)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    A lazy proxy for either global Django settings or a custom settings object.</div><div class="line">    The user can manually configure settings prior to using them. Otherwise,</div><div class="line">    Django uses the settings module pointed to by DJANGO_SETTINGS_MODULE.</div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self, name=None)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Load the settings module pointed to by the environment variable. This</div><div class="line">        is used the first time we need any settings at all, if the user has not</div><div class="line">        previously configured the settings manually.</div><div class="line">        """</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            settings_module = os.environ[ENVIRONMENT_VARIABLE]</div><div class="line">            <span class="keyword">if</span> <span class="keyword">not</span> settings_module: <span class="comment"># If it's set but is an empty string.</span></div><div class="line">                <span class="keyword">raise</span> KeyError</div><div class="line">        <span class="keyword">except</span> KeyError:</div><div class="line">            desc = (<span class="string">"setting %s"</span> % name) <span class="keyword">if</span> name <span class="keyword">else</span> <span class="string">"settings"</span></div><div class="line">            <span class="keyword">raise</span> ImproperlyConfigured(</div><div class="line">                <span class="string">"Requested %s, but settings are not configured. "</span></div><div class="line">                <span class="string">"You must either define the environment variable %s "</span></div><div class="line">                <span class="string">"or call settings.configure() before accessing settings."</span></div><div class="line">                % (desc, ENVIRONMENT_VARIABLE))</div><div class="line"></div><div class="line">        self._wrapped = Settings(settings_module)</div><div class="line">        self._configure_logging()</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> empty:</div><div class="line">            self._setup(name)</div><div class="line">        <span class="keyword">return</span> getattr(self._wrapped, name)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_configure_logging</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Setup logging from LOGGING_CONFIG and LOGGING settings.</div><div class="line">        """</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> sys.warnoptions:</div><div class="line">            <span class="keyword">try</span>:</div><div class="line">                <span class="comment"># Route warnings through python logging</span></div><div class="line">                logging.captureWarnings(<span class="keyword">True</span>)</div><div class="line">                <span class="comment"># Allow DeprecationWarnings through the warnings filters</span></div><div class="line">                warnings.simplefilter(<span class="string">"default"</span>, DeprecationWarning)</div><div class="line">            <span class="keyword">except</span> AttributeError:</div><div class="line">                <span class="comment"># No captureWarnings on Python 2.6, DeprecationWarnings are on anyway</span></div><div class="line">                <span class="keyword">pass</span></div><div class="line"></div><div class="line">        <span class="keyword">if</span> self.LOGGING_CONFIG:</div><div class="line">            <span class="keyword">from</span> django.utils.log <span class="keyword">import</span> DEFAULT_LOGGING</div><div class="line">            <span class="comment"># First find the logging configuration function ...</span></div><div class="line">            logging_config_path, logging_config_func_name = self.LOGGING_CONFIG.rsplit(<span class="string">'.'</span>, <span class="number">1</span>)</div><div class="line">            logging_config_module = importlib.import_module(logging_config_path)</div><div class="line">            logging_config_func = getattr(logging_config_module, logging_config_func_name)</div><div class="line"></div><div class="line">            logging_config_func(DEFAULT_LOGGING)</div><div class="line"></div><div class="line">            <span class="keyword">if</span> self.LOGGING:</div><div class="line">                <span class="comment"># Backwards-compatibility shim for #16288 fix</span></div><div class="line">                compat_patch_logging_config(self.LOGGING)</div><div class="line"></div><div class="line">                <span class="comment"># ... then invoke it with the logging settings</span></div><div class="line">                logging_config_func(self.LOGGING)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">configure</span><span class="params">(self, default_settings=global_settings, **options)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Called to manually configure the settings. The 'default_settings'</div><div class="line">        parameter sets where to retrieve any unspecified values from (its</div><div class="line">        argument must support attribute access (__getattr__)).</div><div class="line">        """</div><div class="line">        <span class="keyword">if</span> self._wrapped <span class="keyword">is</span> <span class="keyword">not</span> empty:</div><div class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'Settings already configured.'</span>)</div><div class="line">        holder = UserSettingsHolder(default_settings)</div><div class="line">        <span class="keyword">for</span> name, value <span class="keyword">in</span> options.items():</div><div class="line">            setattr(holder, name, value)</div><div class="line">        self._wrapped = holder</div><div class="line">        self._configure_logging()</div><div class="line"></div><div class="line"><span class="meta">    @property</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">configured</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="string">"""</span></div><div class="line">        Returns True if the settings have already been configured.</div><div class="line">        """</div><div class="line">        <span class="keyword">return</span> self._wrapped <span class="keyword">is</span> <span class="keyword">not</span> empty</div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><hr>
+<p>1.通过增加一个代理类，封装了延迟求值(实例化)的对象。通过增加一个层解决问题。<br>2.再通过改写<code>__setattr__</code>、<code>__getattr__</code>和<code>__delattr__</code>方法，将对代理类的操作，直接委托给被代理的类。代理模式。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2014/10/11/python_metaclass超类/" itemprop="url">
+                  python中object/type/metaclass
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-10-11T00:00:00-07:00" content="2014-10-11">
+              2014-10-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/10/11/python_metaclass超类/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/10/11/python_metaclass超类/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="从object关键词说起"><a href="#从object关键词说起" class="headerlink" title="从object关键词说起"></a>从<code>object</code>关键词说起</h2><hr>
+<p>官方文档上这样定义<code>object</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Any data <span class="keyword">with</span> state (attributes <span class="keyword">or</span> value) <span class="keyword">and</span> defined behavior (methods). </div><div class="line">Also the ultimate base <span class="class"><span class="keyword">class</span> <span class="title">of</span> <span class="title">any</span> <span class="title">new</span>-<span class="title">style</span> <span class="title">class</span>.</span></div></pre></td></tr></table></figure>
+<p>具有状态（属性和值）以及定义了行为（方法）的数据就是object。同时object是所有新式类的最根本的基类。利用<code>object</code>这样定义（新式）类：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'new self id:'</span>, id(self)</div><div class="line"></div><div class="line">id(MyClass):</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">48438744L</span></div><div class="line"></div><div class="line">id(object)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">506057936L</span></div><div class="line"></div><div class="line">type(MyClass)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>&lt;type <span class="string">'type'</span>&gt;</div><div class="line"></div><div class="line">isinstance(MyClass, type)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">True</span></div></pre></td></tr></table></figure>
+<p><code>MyClass</code>即为静态定义(运行前就定义好了）的类，它继承于<code>object</code>，也因此获得了<code>object</code>的一些属性和方法，包括魔术方法。python中的类的最大特色在于其也是一个对象(实例)。每个类存在于内存中，是<code>object</code>的子类，<code>type</code>的实例。</p>
+<p>实例通过<code>__init__</code>函数进行初始化，一般将此作用的方法称为构造函数。但是python中的<code>__init__</code>还不能完全称为构造函数。很明显，在<code>__init__</code>运行前，实例就存在了，即传入的<code>self</code>参数。实例这个对象在<code>__init__</code>运行前就被解释器按照<code>object</code>的内存模型分配好了内存，进行了一番装饰。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">i = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self id: <span class="number">42531472L</span></div><div class="line">id(i)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">42531472L</span></div><div class="line"></div><div class="line">ii = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self id: <span class="number">34971944</span></div><div class="line">id(ii)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">34971944L</span></div></pre></td></tr></table></figure>
+<p>通过上面这个例子看到<code>self</code>这个参数就是python解释器已经初步实例化了的实例，也可以看到在<code>__init__</code>函数被调用前就已经存在了。因此python有另外一个魔术方法<code>__new__</code>，可以真正的定制实例的内存模型（创建一个什么样的实例)。下面的例子更能说明这一点：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		instance = super(MyClass, cls).__new__(cls)</div><div class="line">		<span class="comment">#或者写成</span></div><div class="line">		<span class="comment">#instance = object.__new__(cls)</span></div><div class="line">		<span class="keyword">return</span> instance</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></div><div class="line">		<span class="keyword">print</span> <span class="string">'new self  id:'</span>, id(self)</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>new self  id: <span class="number">69858136</span></div><div class="line">id(i)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">69858136L</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyInt</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></div><div class="line">		instance = int.__new__(cls)	<span class="comment"># 用int的模型构造实例</span></div><div class="line">		instance.to_str = <span class="keyword">lambda</span> self: str(self)</div><div class="line">		<span class="keyword">return</span> instance</div><div class="line"></div><div class="line">m = MyInt(<span class="number">1</span>)</div><div class="line">m</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">1</span></div><div class="line">m.to_str()</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'1'</span></div></pre></td></tr></table></figure>
+<p><code>MyClass</code>与之前的定义没有区别。不过通过自定义的<code>__new__</code>函数可以在实例存在之前介入，直接操纵实现什么样的实例，并且还能够给实例赋予一些属性和方法。<br><code>MyInt</code>的定义就更加明显，虽然没有继承于<code>int</code>，但是在<code>__new__</code>函数中直接操纵其实例按照<code>int</code>的模型构造，并且赋予了实例一个方法<code>to_str</code>。结果<code>MyInt</code>类就和直接继承<code>int</code>没有明显的区别。python中的单例模式可以更好的说明：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span><span class="params">(object)</span>:</span></div><div class="line">	instance = <span class="keyword">None</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span>	<span class="comment"># __init__不能够做到这一点，因为在调用之前，实例就存在了</span></div><div class="line">		<span class="keyword">if</span> <span class="keyword">not</span> cls.instance:</div><div class="line">			cls.instance = super(Singleton, cls).__new__(cls)</div><div class="line">		<span class="keyword">return</span> cls.instnace</div><div class="line"></div><div class="line">s1 = Singleton()</div><div class="line">s2 = Singleton()</div><div class="line">s1 <span class="keyword">is</span> s2	<span class="comment"># 同一个实例</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">True</span></div></pre></td></tr></table></figure>
+<p>可以看到，通过<code>__new__</code>可以从一开始就定制如何实现实例(其内存模型)。</p>
+<h2 id="type的传说"><a href="#type的传说" class="headerlink" title="type的传说"></a>type的传说</h2><hr>
+<p>python中一切皆对象。一切都是其基类的实例。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">isinstance(1, int) -&gt; True</div><div class="line">isinstance(int, type) -&gt; True</div><div class="line">isinstance(type, type) -&gt; True</div><div class="line"></div><div class="line">isinstance('abc', str) -&gt; True</div><div class="line">issubclass(str, basestring) -&gt; True</div><div class="line">isinstance(basestring, type) -&gt; True</div><div class="line">isinstance(type, type) -&gt; True</div><div class="line"></div><div class="line">isinstance(object, type) -&gt;True</div><div class="line"></div><div class="line">class MyClass(object):</div><div class="line">	pass</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line">isinstance(i, MyClass) -&gt; True</div><div class="line">issubclass(MyClass, object) -&gt; True</div><div class="line">isinstance(MyClass, type) -&gt; True</div></pre></td></tr></table></figure>
+<p><code>object</code>是新式类的根本基类；<code>type</code>则是所有超类的根本基类，甚至是它自己的基类。<code>MyClass</code>是<code>type</code>的实例，当<code>MyClass</code>被定义的时候(python解释器编译这段代码时)就是实例化的过程。可以理解为，python解释器定义了一个变量为<code>MyClass</code>，它是<code>type</code>的实例。而<code>type</code>这种能够用来定义类的类则称为超类<code>metaclass</code>。</p>
+<p>前面说过，<code>MyClass</code>是静态定义的类，在运行前就定义好了属性和方法。python提供了<code>type</code>关键字用于动态定义类。按照python文档的说明，下面两种定义类的方式是等价的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	<span class="keyword">pass</span></div><div class="line"></div><div class="line">MyClass = type(<span class="string">'MyClass'</span>, (object,), &#123;&#125;) <span class="comment"># 第二个参数必须是 tuple类型</span></div></pre></td></tr></table></figure>
+<p>通过实例化<code>type</code>，python提供了一种动态创建类的方式。type(name, bases, attrs)，第一个name参数给定类的名字<code>MyClass.__name__</code>属性，第二个参数bases给定继承的多个基类，第三个参数attrs确定<code>MyClass</code>的一些属性和方法。由于<code>type</code>能够定义类，那么所有继承<code>type</code>的类，也就有了<code>type</code>这种神奇的定义类的功能，从而成为超类。</p>
+<p>普通类可以在定义时通过<code>__new__</code>函数操纵生成的实例，所有继承<code>type</code>的超类也可以通过<code>__new__</code>来操纵生成的类(超类的实例)。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">class MetaClass(type):	# 超类继承type，普通类继承object</div><div class="line">	def __new__(cls, name, bases, attrs):</div><div class="line">		print 'name:', name</div><div class="line">		print 'bases:', bases</div><div class="line">		print 'attrs:', attrs</div><div class="line">		new_class = super(MetaClass, cls).__new__(cls, name, bases, attrs)</div><div class="line">		return new_class</div><div class="line"></div><div class="line">MyClass = MetaClass('MyClass', (object,), &#123;&#125;) # 手动实例化实现MyClass</div><div class="line">&gt;&gt;&gt; name: MyClass</div><div class="line">&gt;&gt;&gt; bases: (object,)</div><div class="line">&gt;&gt;&gt; attrs: &#123;&#125;</div><div class="line"></div><div class="line">i = MyClass()</div><div class="line">print type(i)</div><div class="line">&gt;&gt;&gt; &lt;class '__main__.MyClass'&gt;</div><div class="line"></div><div class="line">isinstance(i, MyClass) -&gt; True</div><div class="line">isinstance(MyClass, MetaClass) -&gt; True</div></pre></td></tr></table></figure>
+<p><code>MetaClass</code>也具有了<code>type</code>的能力。但是，这样通过超类动态实现<code>MyClass</code>需要额外的手动实例化，非常的不协调。python提供了另一种方法，通过定义<code>__metaclass__</code>属性，让解释器实现这一过程。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyClass</span><span class="params">(object)</span>:</span></div><div class="line">	__metaclass__ = MetaClass</div><div class="line"></div><div class="line">	cls_var = <span class="string">'var'</span></div><div class="line">	<span class="function"><span class="keyword">def</span> <span class="title">method</span><span class="params">(self)</span>:</span> <span class="keyword">pass</span></div><div class="line"></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>name: MyClass</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>bases: (object,)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>attrs: &#123;<span class="string">'cls_var'</span>: <span class="string">'var'</span>, <span class="string">'method'</span>: &lt;function m at <span class="number">0x000000000437E588</span>&gt;, \</div><div class="line"><span class="string">'__module__'</span>: <span class="string">'__main__'</span>, <span class="string">'__metaclass__'</span>: &lt;<span class="class"><span class="keyword">class</span> '<span class="title">__main__</span>.<span class="title">MetaClass</span>'&gt;&#125;</span></div></pre></td></tr></table></figure>
+<p>当类或者基类的属性中有<code>__metclass__</code>时，会调用<code>__metaclass__</code>进行类本身的生成，而不是默认的类生成过程。类自己的内存模型通过定义<code>__metaclass__</code>可以动态定制，其实例可以通过定义<code>__new__</code>函数实现定制。进行类定制的超类继承于<code>type</code>，通过定义<code>__new__</code>函数实现。</p>
+<p>可以简单总结为：超类继承于<code>type</code>，通过<code>__new__</code>定制超类的实例，即普通类；普通类继承于<code>object</code>，通过<code>__new__</code>定制普通类的实例。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2014/09/24/python_absolute_import/" itemprop="url">
                   Python绝对导入
                 </a>
@@ -1298,7 +1583,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">37</span>
+              <span class="site-state-item-count">39</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -1306,7 +1591,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/blog/categories">
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">18</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -1359,7 +1644,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2018</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

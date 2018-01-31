@@ -2,7 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://fanchao01.github.io/blog/blog/2017/09/27/palcement-in-pike/</loc>
+    <loc>http://fanchao01.github.io/blog/blog/2018/01/15/fault-tolerant/</loc>
+    
+    <lastmod>2018-01-31T04:07:07.117Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://fanchao01.github.io/blog/blog/2017/09/28/cellv2-in-pike/</loc>
+    
+    <lastmod>2017-10-09T07:27:25.962Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://fanchao01.github.io/blog/blog/2017/09/27/placement-in-pike/</loc>
     
     <lastmod>2017-09-29T09:44:01.784Z</lastmod>
     
