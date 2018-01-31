@@ -5,7 +5,7 @@
   <link href="/blog/atom.xml" rel="self"/>
   
   <link href="http://fanchao01.github.io/blog/"/>
-  <updated>2018-01-31T04:07:07.117Z</updated>
+  <updated>2018-01-31T04:15:37.448Z</updated>
   <id>http://fanchao01.github.io/blog/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/"/>
     <id>http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/</id>
     <published>2018-01-15T08:00:00.000Z</published>
-    <updated>2018-01-31T04:07:07.117Z</updated>
+    <updated>2018-01-31T04:15:37.448Z</updated>
     
     <content type="html"><![CDATA[<h1 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h1><p>A fault-tolerant design enables a system to continue its intended operation, possibly at a reduced level, rather than failing completely, when some part of the system fails. If its operating quality decreases at all, the decrease is proportional to the severity of the failure, as compared to a naively designed system in which even a small failure can cause total breakdown.</p>
 <p>维基百科上的容错有几方面意思：</p>
