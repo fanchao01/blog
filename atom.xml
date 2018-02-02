@@ -5,7 +5,7 @@
   <link href="/blog/atom.xml" rel="self"/>
   
   <link href="http://fanchao01.github.io/blog/"/>
-  <updated>2018-01-31T04:20:22.343Z</updated>
+  <updated>2018-02-02T06:39:38.076Z</updated>
   <id>http://fanchao01.github.io/blog/</id>
   
   <author>
@@ -19,21 +19,23 @@
     <title>一些容错方面的思考</title>
     <link href="http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/"/>
     <id>http://fanchao01.github.io/blog/2018/01/15/fault-tolerant/</id>
-    <published>2018-01-15T08:00:00.000Z</published>
-    <updated>2018-01-31T04:20:22.343Z</updated>
+    <published>2018-01-14T16:00:00.000Z</published>
+    <updated>2018-02-02T06:39:38.076Z</updated>
     
     <content type="html"><![CDATA[<h1 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h1><p>A fault-tolerant design enables a system to continue its intended operation, possibly at a reduced level, rather than failing completely, when some part of the system fails. If its operating quality decreases at all, the decrease is proportional to the severity of the failure, as compared to a naively designed system in which even a small failure can cause total breakdown.</p>
 <p>维基百科上的容错有几方面意思：</p>
 <ol>
-<li>容错指系统遭遇故障时不是完全崩溃，而是能够降级提供服务；</li>
+<li>容错指系统遭遇故障时不是完全崩溃；</li>
 <li>容错系统的服务能力能够根据不同程度的故障保证不同程度的服务，优雅降级。</li>
 </ol>
 <h1 id="容错与高可用性"><a href="#容错与高可用性" class="headerlink" title="容错与高可用性"></a>容错与高可用性</h1><p>容错特指故障发生时的表现；而高可用性是指尽量规避影响用户的可能。可以将一个系统类比成汽车，容错是车祸时自动弹出的气囊，而高可用是刹车系统。我的理解是，容错是高可用性的一个子集，特指(预防)出现问题后的解决方案。</p>
-<p>要想打造一个具有高度容错的系统，需要从架构设计、代码、运维、监控等多方面入手，以下介绍一些可以作为容错系统的思考切入点</p>
+<p>要想打造一个具有高度容错的系统，需要从架构设计、代码、运维、监控等多方面入手，以下介绍一些可以作为容错系统的思考切入点。</p>
 <h2 id="重试"><a href="#重试" class="headerlink" title="重试"></a>重试</h2><hr>
 <p>重试是错误处理中最常使用的技术，通过重试能够大幅度提高SLA，提高系统的可用性。按照系统的状态，重试的难易程度不同。对于无状态服务，例如大多数HTTP请求，简单重新发起调用即可；但是对于有状态服务，不仅需要被请求方具有幂等性，而是要求整个系统具有幂等性。因为极有可能上次失败的调用，使整个下游的状态都发生了改变。因此，对于不同错误应采用不同的重试策略，一些错误不能重试。<br>另外，重试有副作用，可能引起大量的重复操作和吞吐。例如，一个页面展示显示不出来，用户会大量频繁点击，反而造成系统瞬时压力过大，给本来处于不正常的系统带来更加重的问题。按照具体策略不同，重试可能需要限制次数，或者根据成功率决定是否重试等。<br>重试的另外一个副作用是增大了延时，重试时间一般采用退化算法，失败次数越多，下次重试的等待时间越长，那么最大延时取决于最后一次重试成功时的总重试时间，这个时间一定要(远)小于整个系统的延时要求。</p>
 <h2 id="超时"><a href="#超时" class="headerlink" title="超时"></a>超时</h2><hr>
 <p>对各种请求，特别是跨模块/服务的请求一定要添加超时，无论是同步还是异步请求。超时除了能够保证延时，更大的作用在于能够快速发现问题，从而积极采取应对策略。假设一个系统出现内部问题，请求被开在某个状态无法返回，那么这个问题就很难处理，一方面监控发现需要一定时间，另一方面即使发现也很难处理，因为卡的状态可能是复杂且未知的。</p>
+<h2 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h2><hr>
+<p>限流是拒绝一部分请求而保障另一部分请求，简单来说就是削峰填谷。根据具体应用一般有两种方式，一种是缓存请求排队，需要考虑最后排队的请求也要在一定延时内返回。另外一种方式直接限制QPS，在请求过高时直接拒接掉，具体算法也有两种，令牌桶和漏桶算法。在实际使用时可以两种方式结合使用，在保证延时的情况下将请求排队，将不能保证延时的那部分请求直接拒绝。</p>
 <h2 id="HA"><a href="#HA" class="headerlink" title="HA"></a>HA</h2><hr>
 <p>这里的HA特指一些集群的方案和算法，保证单个服务或者单台机器出现问题而整个系统正常提供服务。简单来说就是避免单点问题。这个比较有名的总结即为下图。</p>
 <p><img src="/blog/images/ha.png" alt="img"></p>
@@ -49,11 +51,11 @@
 <p>这里的服务冗余与HA不同，更加偏向于上图中的Backups。平时不提供服务，专门存在一个备份系统在主系统出现问题时进行快速切换。这里有两个问题，一个是数据的一致性问题，可以时时同步或者冷备份，但是一般都有一定时间内的数据丢失问题。而且在实际使用过程中，备份的系统往往有时候并不处在可用状态。主系统可能定时升级，而备份系统没有；同步到备份系统的数据可能某次有丢失不全等等。亚马逊也出现过类似问题，出现故障时恢复耗时过长，而主要原因就是备份系统起不来数据也不全。备份冗余的另外一个问题是快速切换，如果切换太慢那么可能还不如修复主系统。鉴于实际的种种问题，一般出现故障不太会倾向于切换到备系统，坑比较深。</p>
 <h2 id="服务降级"><a href="#服务降级" class="headerlink" title="服务降级"></a>服务降级</h2><hr>
 <p>当出现故障后，能够按照故障的严重程度不同，提供不同质量的服务。服务降级是容灾的核心，但是往往很难做到，这不仅需要好的架构设计，也需要好的编程实现。比较容易理解的例子是页面渲染，例如在页面不能加载一些宣传语广告时直接跳过，保证主要功能可用。另外通过将系统做到跨机器、跨机柜、跨TOR、跨机房、跨地域的容灾设计，可以保证不同程度的服务可用性。</p>
-<h2 id="donwtime"><a href="#donwtime" class="headerlink" title="donwtime"></a>donwtime</h2><hr>
+<h2 id="downtime"><a href="#downtime" class="headerlink" title="downtime"></a>downtime</h2><hr>
 <p>对于各种可能出现的宕机，Oracle有一个概述，可以针对提到的这些点对当前系统进行重点排查。</p>
 <h2 id="非计划宕机"><a href="#非计划宕机" class="headerlink" title="非计划宕机"></a>非计划宕机</h2><p><img src="/blog/images/unplanned_downtime.png" alt="img"></p>
 <h2 id="有计划宕机"><a href="#有计划宕机" class="headerlink" title="有计划宕机"></a>有计划宕机</h2><p><img src="/blog/images/planned_downtime.png" alt="img"></p>
-<p>处理针对这些点进行设计，更重要的是要有定期排查。现实是往往有一些容错、容灾、备份方案，但是一段时间没有用上后，这些手段就再也不演练。真的出现问题，这些手段已经跟当前系统不配置，失效了。</p>
+<p>除了针对这些点进行设计，更重要的是要有定期排查（演练）。现实是往往有一些容错、容灾、备份方案，但是经过一段时间没有用上，这些手段就再也不演练。当真的出现问题时，这些手段已经跟当前系统不配套，失效了。</p>
 <p>（完）</p>
 ]]></content>
     
@@ -72,7 +74,7 @@
     <title>OpenStack-Pike版本中的CellV2</title>
     <link href="http://fanchao01.github.io/blog/2017/09/28/cellv2-in-pike/"/>
     <id>http://fanchao01.github.io/blog/2017/09/28/cellv2-in-pike/</id>
-    <published>2017-09-28T07:00:00.000Z</published>
+    <published>2017-09-27T16:00:00.000Z</published>
     <updated>2017-10-09T07:27:25.962Z</updated>
     
     <content type="html"><![CDATA[<h1 id="社区认为大规模部署nova的问题点"><a href="#社区认为大规模部署nova的问题点" class="headerlink" title="社区认为大规模部署nova的问题点"></a>社区认为大规模部署nova的问题点</h1><hr>
@@ -147,8 +149,8 @@
     <title>OpenStack-Pike版本中的资源管理与并发调度</title>
     <link href="http://fanchao01.github.io/blog/2017/09/27/placement-in-pike/"/>
     <id>http://fanchao01.github.io/blog/2017/09/27/placement-in-pike/</id>
-    <published>2017-09-27T07:00:00.000Z</published>
-    <updated>2017-09-29T09:44:01.784Z</updated>
+    <published>2017-09-26T16:00:00.000Z</published>
+    <updated>2017-09-29T09:44:01.785Z</updated>
     
     <content type="html"><![CDATA[<h2 id="1-资源管理"><a href="#1-资源管理" class="headerlink" title="1.资源管理"></a>1.资源管理</h2><hr>
 <h3 id="之前的资源管理"><a href="#之前的资源管理" class="headerlink" title="之前的资源管理"></a>之前的资源管理</h3><hr>
@@ -190,8 +192,8 @@
     <title>python源码剖析-字节码和虚拟机</title>
     <link href="http://fanchao01.github.io/blog/2016/11/13/python-pycode_and_frame/"/>
     <id>http://fanchao01.github.io/blog/2016/11/13/python-pycode_and_frame/</id>
-    <published>2016-11-13T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.777Z</updated>
+    <published>2016-11-12T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.778Z</updated>
     
     <content type="html"><![CDATA[<p>Python会将代码先编译成字节码，然后在虚拟机中动态得依次解释执行字节码。编译好的字节码存储在硬盘中以<code>.pyc</code>、<code>.pyd</code>等为扩展名。而在运行态，这些字节码会作为Python的一种对象<code>PyCodeObject</code>存在。<code>PyCodeObject</code>可以理解为C语言中的文本段，用于存储编译后的字节码、调试信息、常量值、变量名等。</p>
 <p>本文不会讲述代码如何一步步编译成<code>PyCodeObject</code>，只会简单介绍<code>PyCodeObject</code>中各个域的含义，而把重点放在介绍Python的虚拟机和执行流。</p>
@@ -283,8 +285,8 @@
     <title>10X优化glance镜像下载速率</title>
     <link href="http://fanchao01.github.io/blog/2016/10/28/openstack-%E5%B0%86glance%E7%9A%84%E4%B8%8B%E8%BD%BD%E9%80%9F%E5%BA%A6%E5%8A%A0%E5%BF%AB10%E5%80%8D/"/>
     <id>http://fanchao01.github.io/blog/2016/10/28/openstack-将glance的下载速度加快10倍/</id>
-    <published>2016-10-28T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.770Z</updated>
+    <published>2016-10-27T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.771Z</updated>
     
     <content type="html"><![CDATA[<p>（将一年之前解决的问题再梳理下）</p>
 <h2 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h2><p>Glance是OpenStack中管理镜像的服务，主要用于上传和下载镜像文件，后端接各种存储服务。例如Ceph、sheepdog、本地磁盘等等，大致的逻辑如图。</p>
@@ -339,8 +341,8 @@
     <title>如何反驳-HowToDisagree</title>
     <link href="http://fanchao01.github.io/blog/2016/10/26/notes-howtodisagree/"/>
     <id>http://fanchao01.github.io/blog/2016/10/26/notes-howtodisagree/</id>
-    <published>2016-10-26T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.688Z</updated>
+    <published>2016-10-25T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.689Z</updated>
     
     <content type="html"><![CDATA[<p>(今天看了王垠大神的<a href="http://www.yinwang.org/blog-cn/2016/10/25/argument" target="_blank" rel="external">&lt;如何赢得技术争论&gt;</a>，决定把保罗·格雷厄姆的旧篇<howtodisagre>翻出来整理下，同时也将自己对争论的理解好好整理下）</howtodisagre></p>
 <p><img src="/blog/images/HowToDisagree_picture_tower.jpg" alt="image"></p>
@@ -432,8 +434,8 @@
     <title>Python源码剖析—Set容器</title>
     <link href="http://fanchao01.github.io/blog/2016/10/24/python-setobject/"/>
     <id>http://fanchao01.github.io/blog/2016/10/24/python-setobject/</id>
-    <published>2016-10-24T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.764Z</updated>
+    <published>2016-10-23T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.765Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Python的Set容器"><a href="#Python的Set容器" class="headerlink" title="Python的Set容器"></a>Python的Set容器</h2><hr>
 <p><code>set</code>与<code>List</code>对象相似，均为可变异构容器。但是其实现却和<code>Dict</code>类似，均为哈希表。具体的数据结构代码如下。</p>
@@ -491,8 +493,8 @@
     <title>Python源码剖析—信号处理机制</title>
     <link href="http://fanchao01.github.io/blog/2016/10/23/python-signal/"/>
     <id>http://fanchao01.github.io/blog/2016/10/23/python-signal/</id>
-    <published>2016-10-23T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.761Z</updated>
+    <published>2016-10-22T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.762Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Python信号处理机制"><a href="#Python信号处理机制" class="headerlink" title="Python信号处理机制"></a>Python信号处理机制</h2><hr>
 <p>本篇的信号处理机制不是指Python的<code>signal</code>模块的使用，而是指Python解释器本身如何处理信号以及如何实现<code>signal</code>模块。Python解释器处理信号机制需要做好两件事情：</p>
@@ -566,8 +568,8 @@
     <title>Python源码剖析—字符串对象PyStringObject</title>
     <link href="http://fanchao01.github.io/blog/2016/10/18/python-string/"/>
     <id>http://fanchao01.github.io/blog/2016/10/18/python-string/</id>
-    <published>2016-10-18T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.757Z</updated>
+    <published>2016-10-17T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.758Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Python字符串对象PyStringObject"><a href="#Python字符串对象PyStringObject" class="headerlink" title="Python字符串对象PyStringObject"></a>Python字符串对象PyStringObject</h2><hr>
 <p>Python的字符串对象是一个不可变对象，任何改变字符串字面值的操作都是重新创建一个新的字符串。</p>
@@ -611,8 +613,8 @@
     <title>Python源码剖析—整数对象PyIntObject</title>
     <link href="http://fanchao01.github.io/blog/2016/10/17/python-int/"/>
     <id>http://fanchao01.github.io/blog/2016/10/17/python-int/</id>
-    <published>2016-10-17T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.754Z</updated>
+    <published>2016-10-16T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.755Z</updated>
     
     <content type="html"><![CDATA[<h2 id="整数对象的结构"><a href="#整数对象的结构" class="headerlink" title="整数对象的结构"></a>整数对象的结构</h2><hr>
 <p>整数对象是固定大小的Python对象，内部只有一个<code>ob_ival</code>保存实际的整数值。</p>
@@ -671,8 +673,8 @@
     <title>Python源码剖析—循环垃圾回收器</title>
     <link href="http://fanchao01.github.io/blog/2016/10/11/python-gc/"/>
     <id>http://fanchao01.github.io/blog/2016/10/11/python-gc/</id>
-    <published>2016-10-11T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.747Z</updated>
+    <published>2016-10-10T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.748Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Python垃圾回收概述"><a href="#Python垃圾回收概述" class="headerlink" title="Python垃圾回收概述"></a>Python垃圾回收概述</h2><hr>
 <p>Python中的垃圾回收机制基于引用计数(ob_refcnt)，因此需要解决循环引用导致引用计数不能归零的问题。例如</p>
@@ -726,8 +728,8 @@
     <title>Python源码剖析—统一内存管理</title>
     <link href="http://fanchao01.github.io/blog/2016/10/09/python-obmalloc/"/>
     <id>http://fanchao01.github.io/blog/2016/10/09/python-obmalloc/</id>
-    <published>2016-10-09T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.741Z</updated>
+    <published>2016-10-08T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.742Z</updated>
     
     <content type="html"><![CDATA[<p>(图片来自: <a href="https://nodefe.com/implement-of-pymalloc-from-source/" target="_blank" rel="external">https://nodefe.com/implement-of-pymalloc-from-source/</a>)<br><img src="/blog/images/obmalloc_global.jpg" alt="image"></p>
 <h2 id="arena、pool和block"><a href="#arena、pool和block" class="headerlink" title="arena、pool和block"></a>arena、pool和block</h2><hr>
@@ -769,8 +771,8 @@
     <title>requests的高级功能-认证机制与redirect机制</title>
     <link href="http://fanchao01.github.io/blog/2016/08/02/pythonlib-requests4/"/>
     <id>http://fanchao01.github.io/blog/2016/08/02/pythonlib-requests4/</id>
-    <published>2016-08-02T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.733Z</updated>
+    <published>2016-08-01T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.734Z</updated>
     
     <content type="html"><![CDATA[<h3 id="requests中的认证机制"><a href="#requests中的认证机制" class="headerlink" title="requests中的认证机制"></a>requests中的认证机制</h3><hr>
 <p>用户可以通过<code>Session.request</code>接口传入<code>auth</code>参数指定用户名和密码。<code>auth</code>参数可以是<code>(username, password)</code>的数组；也可以是<code>HTTPBaiscAuth</code>类似的实例，只要支持调用即可。</p>
@@ -817,8 +819,8 @@
     <title>requests的高级功能-重试机制</title>
     <link href="http://fanchao01.github.io/blog/2016/07/30/pythonlib-request3/"/>
     <id>http://fanchao01.github.io/blog/2016/07/30/pythonlib-request3/</id>
-    <published>2016-07-30T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.730Z</updated>
+    <published>2016-07-29T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.731Z</updated>
     
     <content type="html"><![CDATA[<h3 id="requests中的重试"><a href="#requests中的重试" class="headerlink" title="requests中的重试"></a>requests中的重试</h3><hr>
 <p>通过之前的<a href="http://fanchao01.github.io/blog/2016/07/29/pythonlib-requests1.html">流程图</a>知道<code>max_retries</code>参数在<code>HTTPAdapter</code>初始化时设置。可以传递整数或者传递<code>urllib3.util.Retry</code>实例。</p>
@@ -851,8 +853,8 @@
     <title>requests的高级功能-超时时间</title>
     <link href="http://fanchao01.github.io/blog/2016/07/30/pythonlib-request2/"/>
     <id>http://fanchao01.github.io/blog/2016/07/30/pythonlib-request2/</id>
-    <published>2016-07-30T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.727Z</updated>
+    <published>2016-07-29T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.728Z</updated>
     
     <content type="html"><![CDATA[<h2 id="requests的高级功能"><a href="#requests的高级功能" class="headerlink" title="requests的高级功能"></a>requests的高级功能</h2><hr>
 <p>如果简单的使用requests，会发现（requesets.get..)使用了默认参数的<code>HTTPAdapter</code>,因此所有由<code>HTTPAdapter</code>初始化参数指定的功能都没有办法使用，例如：重试、缓存池大小、缓存连接池大小、缓存池是否堵塞等。当然，因为<code>requests.get</code>方式只会发起一次HTTP请求，所以缓存相关的都没有设置的必要。</p>
@@ -885,8 +887,8 @@
     <title>requests库源码剖析</title>
     <link href="http://fanchao01.github.io/blog/2016/07/29/pythonlib-requests1/"/>
     <id>http://fanchao01.github.io/blog/2016/07/29/pythonlib-requests1/</id>
-    <published>2016-07-29T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.724Z</updated>
+    <published>2016-07-28T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.725Z</updated>
     
     <content type="html"><![CDATA[<h2 id="requests-HTTP-for-humans"><a href="#requests-HTTP-for-humans" class="headerlink" title="requests: HTTP for humans"></a>requests: HTTP for humans</h2><hr>
 <p>requests以简洁、human-friendly著称，谁用谁知道。本文从源码角度剖析requests，先从数据结构入手，再到整个HTTP访问流程，然后着重讲解requests中用于处理netrc、redirects、cache等用到的技术。</p>
@@ -927,8 +929,8 @@
     <title>OpenStack之Eventlet</title>
     <link href="http://fanchao01.github.io/blog/2016/02/27/openstack-eventlet2/"/>
     <id>http://fanchao01.github.io/blog/2016/02/27/openstack-eventlet2/</id>
-    <published>2016-02-27T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.717Z</updated>
+    <published>2016-02-26T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.718Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Eventlet的Hub"><a href="#Eventlet的Hub" class="headerlink" title="Eventlet的Hub"></a>Eventlet的Hub</h2><hr>
 <p>所有基于<code>epoll</code>(多路复用)的框架，总有一个事件循环处理中心，一般称为<code>Hub</code>。<code>Eventlet</code>中的<code>Hub</code>不仅是所有事件监听和处理的中心，也是greenlet调度的中心。下面看看Hub的事件处理逻辑。</p>
@@ -1001,8 +1003,8 @@
     <title>Evenlet的基础greenlet</title>
     <link href="http://fanchao01.github.io/blog/2015/12/14/openstack-eventlet/"/>
     <id>http://fanchao01.github.io/blog/2015/12/14/openstack-eventlet/</id>
-    <published>2015-12-14T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.721Z</updated>
+    <published>2015-12-13T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.722Z</updated>
     
     <content type="html"><![CDATA[<h2 id="Eventlet的基础"><a href="#Eventlet的基础" class="headerlink" title="Eventlet的基础"></a>Eventlet的基础</h2><hr>
 <p>用官方的开场白介绍<a href="http://eventlet.net/" target="_blank" rel="external">eventlet</a>。eventlet是一个python并发（concurrent）网络库，能够在不改变编程方式的情况下，改变程序的运行方式。</p>
@@ -1075,8 +1077,8 @@
     <title>python中的享元模式(flyweight)</title>
     <link href="http://fanchao01.github.io/blog/2015/04/13/python-flyweight/"/>
     <id>http://fanchao01.github.io/blog/2015/04/13/python-flyweight/</id>
-    <published>2015-04-13T07:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.713Z</updated>
+    <published>2015-04-12T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.714Z</updated>
     
     <content type="html"><![CDATA[<p>这篇文章主要翻译自<a href="http://yloiseau.net/articles/DesignPatterns/flyweight/" target="_blank" rel="external">Design Pattern and Python Flyweight Pattern</a>，稍微加上我自己的一点理解。</p>
 <h2 id="享元模式"><a href="#享元模式" class="headerlink" title="享元模式"></a>享元模式</h2><hr>
@@ -1143,8 +1145,8 @@
     <title>Unix中的几种I/O模型</title>
     <link href="http://fanchao01.github.io/blog/2015/02/06/note-asynchrounous/"/>
     <id>http://fanchao01.github.io/blog/2015/02/06/note-asynchrounous/</id>
-    <published>2015-02-06T08:00:00.000Z</published>
-    <updated>2017-09-29T09:39:01.710Z</updated>
+    <published>2015-02-05T16:00:00.000Z</published>
+    <updated>2017-09-29T09:39:01.711Z</updated>
     
     <content type="html"><![CDATA[<p><img src="/blog/images/asyncio.gif" alt="image"></p>
 <h2 id="对简单操作模型的理解"><a href="#对简单操作模型的理解" class="headerlink" title="对简单操作模型的理解"></a>对简单操作模型的理解</h2><hr>
