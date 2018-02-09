@@ -1,0 +1,663 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/blog/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/blog/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Blog My Minds" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="RabbitMQ的架构和时序图，RabbitMQ、AMQP、RabbitMQ网络框架">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ架构">
+<meta property="og:url" content="http://fanchao01.github.io/blog/2018/02/09/rabbitmq-arch/index.html">
+<meta property="og:site_name" content="Blog My Minds">
+<meta property="og:description" content="RabbitMQ的架构和时序图，RabbitMQ、AMQP、RabbitMQ网络框架">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_example.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_app.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_app3.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/erlang_sup.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/erlang_one_for_one.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/erlang_one_for_all.gif">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_arch.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_message_arch.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_tcp_server.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_client.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_message_flow_1.png">
+<meta property="og:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_message_flow_2.png">
+<meta property="og:updated_time" content="2018-02-09T08:29:40.839Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RabbitMQ架构">
+<meta name="twitter:description" content="RabbitMQ的架构和时序图，RabbitMQ、AMQP、RabbitMQ网络框架">
+<meta name="twitter:image" content="http://fanchao01.github.io/blog/blog/images/rabbitmq_example.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> RabbitMQ架构 | Blog My Minds </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?7f592ce66e56bd7572224ba7c19a8f40";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Blog My Minds</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                RabbitMQ架构
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2018-02-09T00:00:00+08:00" content="2018-02-09">
+              2018-02-09
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/RabbitMQ/" itemprop="url" rel="index">
+                    <span itemprop="name">RabbitMQ</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2018/02/09/rabbitmq-arch/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/02/09/rabbitmq-arch/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="RabbitMQ"><a href="#RabbitMQ" class="headerlink" title="RabbitMQ"></a>RabbitMQ</h1><p>RabbitMQ是一个高可用的消息中间件，支持多种协议和集群扩展。并且支持消息持久化和镜像队列，适用于对消息可靠性较高的场合，基本模型如下。</p>
+<p><img src="/blog/images/rabbitmq_example.png" alt="img"></p>
+<p>其客户端使用方式</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> kombu <span class="keyword">import</span> Connection, Exchange, Queue</div><div class="line"></div><div class="line">media_exchange = Exchange(<span class="string">'media'</span>, <span class="string">'direct'</span>, durable=<span class="keyword">True</span>)</div><div class="line">video_queue = Queue(<span class="string">'video'</span>, exchange=media_exchange, routing_key=<span class="string">'video'</span>)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">process_media</span><span class="params">(body, message)</span>:</span></div><div class="line">    <span class="keyword">print</span> body</div><div class="line">    message.ack()</div><div class="line"></div><div class="line"><span class="comment"># connections</span></div><div class="line"><span class="keyword">with</span> Connection(<span class="string">'amqp://guest:guest@localhost//'</span>) <span class="keyword">as</span> conn:</div><div class="line"></div><div class="line">    <span class="comment"># produce</span></div><div class="line">    producer = conn.Producer(serializer=<span class="string">'json'</span>)</div><div class="line">    producer.publish(&#123;<span class="string">'name'</span>: <span class="string">'/tmp/lolcat1.avi'</span>, <span class="string">'size'</span>: <span class="number">1301013</span>&#125;,</div><div class="line">                      exchange=media_exchange, routing_key=<span class="string">'video'</span>,</div><div class="line">                      declare=[video_queue])</div><div class="line"></div><div class="line">    <span class="comment"># the declare above, makes sure the video queue is declared</span></div><div class="line">    <span class="comment"># so that the messages can be delivered.</span></div><div class="line">    <span class="comment"># It's a best practice in Kombu to have both publishers and</span></div><div class="line">    <span class="comment"># consumers declare the queue. You can also declare the</span></div><div class="line">    <span class="comment"># queue manually using:</span></div><div class="line">    <span class="comment">#     video_queue(conn).declare()</span></div><div class="line"></div><div class="line">    <span class="comment"># consume</span></div><div class="line">    <span class="keyword">with</span> conn.Consumer(video_queue, callbacks=[process_media]) <span class="keyword">as</span> consumer:</div><div class="line">        <span class="comment"># Process messages and handle events on all channels</span></div><div class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">            conn.drain_events()</div></pre></td></tr></table></figure>
+<p>示例中的发布端和消费端是同一方，而实际中的使用方式一般有多种场景，topic模式、fanout模式、direct模式和RPC模式。</p>
+<p><img src="/blog/images/rabbitmq_app.png" alt="img"><br><img src="/blog/images/rabbitmq_app3.png" alt="img"></p>
+<ol>
+<li>topic模式，按照设置的路由信息（routing key）将消息路由到一个或者多个消费端，而消息只能由一个消费者消费一次。一个消费者可以设置多个路由信息，可以同时获取多个消费者发送的消息；</li>
+<li>fanout模式，与topic模式唯一的区别是同一消息会发送到订阅（binding）的多个消费者；</li>
+<li>direct模式，一对一模式，实际中比较少用；</li>
+<li>RPC模式，结合topic和direct模式，发送消息的同时指定要接受的消息。</li>
+</ol>
+<h2 id="RabbitMQ监控树"><a href="#RabbitMQ监控树" class="headerlink" title="RabbitMQ监控树"></a>RabbitMQ监控树</h2><p>为了高可靠，Erlang中实际的工作进程（Erlang进程，并不是系统进程）都有一个监控进程，监控进程负责（一个或多个）工作进程的创建、销毁和重启。监控进程和工作进程的关系如图。</p>
+<p><img src="/blog/images/erlang_sup.gif" alt="img"></p>
+<ol>
+<li>方块图是监控进程；</li>
+<li>圆圈是工作进程；</li>
+<li>方块中的”1“（one_for_one)和”a“（one_for_all）代表不同的监控策略</li>
+</ol>
+<p><strong>one_for_one 监控策略</strong>，一个工作进程崩溃，则只重启崩溃的工作进程。</p>
+<p><img src="/blog/images/erlang_one_for_one.gif" alt="img"></p>
+<p><strong>one_for_all监控策略</strong>，一个工作进程崩溃，则销毁并重启所有工作进程</p>
+<p><img src="/blog/images/erlang_one_for_all.gif" alt="img"><br>在RabbitMQ中还有一种<strong>simple_one_for_one监控策略</strong>，与<strong>one_for_one监控策略</strong>相同，只不过重启工作进程时的启动参数是固定的。RabbitMQ网络框架也遵循该原则。</p>
+<p><img src="/blog/images/rabbitmq_arch.png" alt="img"></p>
+<h2 id="RabbitMQ消息架构"><a href="#RabbitMQ消息架构" class="headerlink" title="RabbitMQ消息架构"></a>RabbitMQ消息架构</h2><p>当client端链接服务器时，RabbitMQ会启动一系列监控和工作进程来处理网络连接。</p>
+<p><img src="/blog/images/rabbitmq_message_arch.png" alt="img"><br>为了降低TCP链接数量，多个消费者共享同一个链接Connection，但是每个消费者独享一个管道channel，用consumer_tag标识。consumer_tag在Connection唯一，从1开始累加，当重连接时需要匹配该tag。每个消费者对应独立的一套rabbit_channel_sup_sup-&gt;rabbit_channel_sup-&gt;rabbit_channel|rabbit_writer|rabbit_limiter系列进程。</p>
+<h2 id="RabbitMQ网络框架时序图"><a href="#RabbitMQ网络框架时序图" class="headerlink" title="RabbitMQ网络框架时序图"></a>RabbitMQ网络框架时序图</h2><p><img src="/blog/images/rabbitmq_tcp_server.png" alt="img"><br>client建立链接后，RabbitMQ通过tcp_acceptor进程处理accept成功后返回的clientfd。</p>
+<p><img src="/blog/images/rabbitmq_client.png" alt="img"><br>rabbit_reader从TCP链接中读取数据，然后根据协议回调函数处理客户端的各种请求。</p>
+<h2 id="RabbitMQ消息处理流程"><a href="#RabbitMQ消息处理流程" class="headerlink" title="RabbitMQ消息处理流程"></a>RabbitMQ消息处理流程</h2><p><img src="/blog/images/rabbitmq_message_flow_1.png" alt="img"><br>RabbitMQ先验证权限；然后检查Exchange是否存在，不存在则创建；检查消息是否合法以及是否需要confirm等；根据路由信息选择消费队列；检查消费队列是否存在，有则将消息发送给消息队列；检查消费者是否存在，存在则将消息发送给消费者client端。</p>
+<p><img src="/blog/images/rabbitmq_message_flow_2.png" alt="img"><br>RabbitMQ会根据不同的消息的不同类型做不同的处理：</p>
+<ol>
+<li>不持久化消息，如果没有消费者则直接丢掉，不会入消费队列；如果有，则先入消息队列，按照入队顺序依次发送给消费者。</li>
+<li>持久化消息，将消息持久化成功后才给发送端发ack，然后再发送给消费者。</li>
+</ol>
+<p>（完）</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2018/01/15/fault-tolerant/" rel="next" title="一些容错方面的思考">
+                <i class="fa fa-chevron-left"></i> 一些容错方面的思考
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2018/02/09/rabbitmq-arch/"
+           data-title="RabbitMQ架构" data-url="http://fanchao01.github.io/blog/blog/2018/02/09/rabbitmq-arch/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/blog/images/avatar.gif"
+               alt="FanChao" />
+          <p class="site-author-name" itemprop="name">FanChao</p>
+          <p class="site-description motion-element" itemprop="description">Enjoin it!</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/archives">
+              <span class="site-state-item-count">40</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ"><span class="nav-number">1.</span> <span class="nav-text">RabbitMQ</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RabbitMQ监控树"><span class="nav-number">1.1.</span> <span class="nav-text">RabbitMQ监控树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RabbitMQ消息架构"><span class="nav-number">1.2.</span> <span class="nav-text">RabbitMQ消息架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RabbitMQ网络框架时序图"><span class="nav-number">1.3.</span> <span class="nav-text">RabbitMQ网络框架时序图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RabbitMQ消息处理流程"><span class="nav-number">1.4.</span> <span class="nav-text">RabbitMQ消息处理流程</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">FanChao</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"fanchao01"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

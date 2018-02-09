@@ -245,6 +245,251 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2014/11/04/django-template系统/" itemprop="url">
+                  django模板系统-源码分析-1
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-04T00:00:00+08:00" content="2014-11-04">
+              2014-11-04
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/python/" itemprop="url" rel="index">
+                    <span itemprop="name">python</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2014/11/04/django-template系统/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/11/04/django-template系统/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            
+## django模板简单实例
+----------------------
+简单的hellowold 示例。
+
+undefined
+
+**- Template: 模板类，通过render方法求值**
+
+**- Context：环境类，保存上下文环境，变量到值的映射**
+
+**- variable： 通过{{ }}引用变量**
+
+## django.template.Lexer
+---------------------------
+django模板系统就是实现了一个小型的解释型语言，其中Template是编译器实例，Context是环境变量。源码中的其他几个类的作用。
+
+**- Lexer： 词法分析类，将模板原始字符串转换成token**
+
+**- Parser: 语法分析类，将给定的token转换成node，并生成抽象语法树**
+
+django模板系统中的Lexer比较简单，并不是完全的将所有原始字符串都转成token，它只负责处理4种标识转成4种token。至于每个token内字符串的解析稍后分析，Lexer解析成的4种token分别是:
+
+**- TOKEN_TEXT = 0 文本类型，模板里面的字面字符串**
+
+**- TOKEN_VAR = 1 变量类型， 用{{ }}包围的字符串**
+
+**- TOKEN_BLOCK = 2 块类型，以{% %\}包围的字符串**
+
+**- TOKEN_COMMENT = 3 注释类型，以\{\# \#\}包围的字符串**
+
+Lexer会将原始字符串通过正则表达式解析为token，但不包括标识。如下所示。
+
+undefined
+
+简单匹配每个标识的开头和结尾。通过这里可以看到，如果一个语言语法中有块的结尾标识，解析起来是比较方便的。
+
+undefined
+
+因为Token类默认只有`__str__`方法，这里用`map`方法调用以显示token内的字符串。目前的调用路径为`Tempalte -> Lexer() => lexer -> lexer.tokensize => tokens`（->代表调用，=>代表返回值）。
+
+## django.base.Parser
+--------------------------
+django模板的Parser负责解析Lexer生成的tokens生成语法树。Parser类在初始化函数中首先做的是加载内置库builtins，将django自带的一些tag极其filter加载进来，类似于初始化运行时环境。另外全局变量builtins在import时完成。具体如下
+
+undefined
+
+Parser的逻辑分为几个部分：
+
+第一部分，Parser将给定的tokens解析为对应的语法node。node大概分为3种：
+
+**- TextNode: 存储text，模板原始字符的字面值，字符串**
+
+**- VariableNode： 存储作为变量的字符，也可能是一个类似a.b.c的表达式**
+
+**- complied_result： block node中表达式的编译结果**
+
+#### TextNode
+TextNode比较简单，就是存储字面值，并且在render调用的时候返回该字面值。
+
+### VariableNode
+
+VariableNode比较复杂，本身存储的是一个叫做`FilterExpression`的实例，这个实例中存储的才是TOKEN\_VAR类型的token的内容（字符串）。简单的存储（依赖）关系是`token.contents -> FilterExpression -> VariableNode`。而这个`FilterExpression`就是处理VariableNode中的字符串，通过resolve求值。调用关系`Parser.parse -> Parser.compile_filter(token.contents) => filter_expression -> VariableNode(filter_expression) -> VariableNode.render -> filter_expression.resolve`。
+
+### complied_result
+
+complied\_result更为复杂，本身是一个叫做`complied_func(self,token)`的结果，其中`self`是Parser实例本身，token是TOKEN\_BLOCK类型的token。简单的调用关系`parser.parse -> token.contents.split()[0] => command -> parser.tags[command] => compiled_func => compiled_result`。BLOCK\_TOKEN存储的字符串的第一个单词（例如 if，with）作为key查找实际的处理函数complied\_func，调用compiled\_func会返回一个compiled\_result。这里可以猜到compiled\_result实际也是一个类node实例，通过resolve求值。
+
+**每个node实现resolve求值方法，也就是具体BLOCK的语法逻辑。`template.render -> nodelist.render -> 遍历for node in nodelist --> node.render --> filter_expression.resolve(用户定义的方法，例如do_if) => string -> join(strings)返回字符串` **
+
+第二部分, Parser创建一个NodeList实例。nodelist作为语法树的载体，Parser.crate\_nodelist -> NodeList()。
+
+### NodeList
+
+nodelist继承于list存储同一个语法域（作用域？）的node。`render`方法会遍历当前的node，调用node.render返回一个完整的求值后的字符串。调用关系`nodelist.render -> for node in nodelist -->  node.render => string -> 组合成一个字符串`。
+
+## django.template.Template
+----------------------------------------
+Template是整个django模板系统的入口函数，等同于一个解释器类interpreter。Template通过调用compile\_string返回nodelist语法树，通过render方法求值。调用关系`Template -> compile_string -> lexer => tokens -> parser => nodelist；Tempaltee.render -> nodelist.render最终求值`。
+
+## django.context.Context
+----------------------------------------
+Context是堆栈式的环境类，存储全局环境和上下文环境。Context内的dicts变量按照顺序存储每个作用域的环境变量的集合，这个集合是ContextDict的实例。Context.dicts的第一个元素dicts[0]就是一些内置变量集合{'True': True, 'False': False, 'None': None}。
+
+**put Context的put方法存入当前ContextDict的实例，该实例存储了当前作用域定义的变量值。如  {% with 1 as a %}；**
+
+**pop Context的pop方法弹出最深作用域中变量值集合的ContextDict的实例；**
+
+**get Context的get方法获取给定变量的值。**
+
+undefined
+
+### 几个不同Context类的关系和区别
+
+BaseContext是几个类的基类，几个类的继承关系如下。
+
+undefined
+
+Context类中的render\_context属性为RenderContext的实例，该属性会作为解析模板的上下文环境实例。增加render\_context作为模板中设置的变量的上下文环境，以免出现冲突。也就是说，Context.dicts保存django设置的模板环境变量，Context.render\_context保存模板中用户设置的变量。
+
+RenderContext类中的`get`方法不会遍历dicts属性中的所有context实例，只会查找当前作用域（dicts中最后一个上下文环境实例）。
+
+RequestContext类继承Context类，增加一个request参数，会调用所有的processors对request进行处理。
+
+
+## 模板中变量（TOKEN_VAR）的求值
+-----------------------
+TOKEN\_TEXT的求值方法比较简单，直接返回字面值就好。接下来探讨下模板中变量的求值，即以双大括号包围的变量的求值。
+django模板中双大括号包围的字符首先经Lexer转为TOKEN\_VAR类型的token，然后传入Parser解析为VariableNode，然后通过调用其resolve方法求值。简单的求值顺序`variable|default:"Default value"|date:"Y-m-d"' -> Lexer => Token(TOKEN_VAR) -> Parser => VariableNode => VariableNode.resolve`求值。下面是源码中的示例。
+
+undefined
+
+前面说过Parser将TOKEN\_VAR类型token中的字符串token.contents传入FilterExpression，再将这个表达式传入VariableNode。当字符串转入FilterExpression后，就会被解析为两种值。一种是数字，所以在变量表达式双大括号中写数字是语法允许的；另一种是Variable实例，该实例负责在环境context中求变量本身的值。同时FilterExpression还将字符串中的filter以及参数提取出来，例如上面这个例子中的两个过滤器。求值时，FilterExpression会将Variable得到的变量值再依次传入filter中计算。过程为`Parser.compiler_filter(token.contents) => filter_expression -> VariableNode解析出variable实例以及filters；VariableNode.render -> FilterExpression.resolve -> Variable.resolve => 值 -> 依次将值带入各个filter求解最后的值`。可以简单叙述各类的功能。
+
+**- VariableNode 负责提供方法，对外提供一个render方法。很类似适配器模式**
+
+**- FilterExpression 负责解析原始字符串（变量表达式），创建Variable实例以及filters，提供resolve方法**
+
+**- Variable 负责解析变量，在上下文环境中求值**
+
+## 模板中块(TOKEN_BLOCK)的求值
+---------------------------
+Django模板系统中的BLOCK可以提供多种功能，逻辑判断（if）、循环（for）、赋值（with）等等。类比上面处理变量的过程，BLOCK的处理过程类似，唯一不同的是具体返回的node和解析BLOCK表达式交由用户定制，每个具体的node的调用通过表达的第一个单词区分，`command=token.contens.split()[0] -> compile_func=parser.tags[command] -> compile_func(parser, token)`，这个compile\_func返回的是一个用户自定义的node。而每个BLOCK剩余表达式的解析也由用户定义函数实现（类似FilterExpression），通过compile\_func调用。
+简单总结的说， 用户自定义的node实现了BLOCK的逻辑部分；自定义的解析函数实现了parser部分。
+
+
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2014/11/02/django-LazyObject-惰性求值/" itemprop="url">
                   django中的惰性求值
                 </a>
@@ -1583,7 +1828,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/blog/archives">
-              <span class="site-state-item-count">39</span>
+              <span class="site-state-item-count">40</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -1591,7 +1836,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/blog/categories">
-                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>

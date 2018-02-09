@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://fanchao01.github.io/blog/blog/2018/02/09/rabbitmq-arch/</loc>
+    
+    <lastmod>2018-02-09T08:29:40.839Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://fanchao01.github.io/blog/blog/2018/01/15/fault-tolerant/</loc>
     
     <lastmod>2018-02-02T06:39:38.076Z</lastmod>
